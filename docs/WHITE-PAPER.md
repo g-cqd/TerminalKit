@@ -111,7 +111,10 @@ is better without it.
 `.swiftLanguageMode(.v6)` (which already implies `RegionBasedIsolation`,
 `DisableOutwardActorInference`, `InferSendableFromCaptures`, `DeprecateApplicationMain`),
 `StrictMemorySafety`, `ExistentialAny`, `InferIsolatedConformances`, `InternalImportsByDefault`,
-`MemberImportVisibility`, warnings as errors, and the two `-warn-long-*` limits.
+`MemberImportVisibility`, and warnings as errors.
+
+Build optimized white-box tests with explicit testability; build shipping and benchmark binaries
+separately without it. Testing mode is a build choice, not a reason to widen the public API.
 
 **Banned:** `-Ounchecked`. It strips the bounds and overflow checks `StrictMemorySafety` relies on.
 
@@ -140,11 +143,6 @@ is better without it.
 
 Atomic and buildable. The message states **why**. Never mix a refactor and a behaviour change. Slice
 by behaviour. Report residual risk and follow-ups explicitly.
-
-**Banned: `-warn-long-*`, as much as `-Ounchecked`.** A target carrying `unsafeFlags` is not built
-with `-enable-testing`, so `@testable import` of it fails — a warning threshold silently costing the
-ability to test the thing at all. These flags were here from the first commit and it took inheriting
-3,096 lines of white-box tests to find out. ADR-0010.
 
 ## 7. Bans
 
