@@ -21,19 +21,14 @@ public enum DiffRenderer: Sendable {
     public static func render(
         front: ScreenBuffer, back: ScreenBuffer, into bytes: inout ContiguousArray<UInt8>
     ) {
-        let columns = back.columns
-        let ranges = back.dirty.dirtyRanges(columns: columns)
-        guard !ranges.isEmpty else { return }
-
         var lastRow = -1
         var lastCol = -1
         var lastStyle = Style.default
 
-        for range in ranges {
-            let row = range.row
+        back.dirty.forEachDirtyRange(columns: back.columns) { row, colStart, colEnd in
             var runStart: Int?
 
-            for col in range.colStart ..< range.colEnd {
+            for col in colStart ..< colEnd {
                 if front[row, col] == back[row, col] {
                     if let start = runStart {
                         emitChangedRun(
@@ -63,7 +58,7 @@ public enum DiffRenderer: Sendable {
                     back: back,
                     row: row,
                     colStart: start,
-                    colEnd: range.colEnd,
+                    colEnd: colEnd,
                     lastRow: &lastRow,
                     lastCol: &lastCol,
                     lastStyle: &lastStyle,
