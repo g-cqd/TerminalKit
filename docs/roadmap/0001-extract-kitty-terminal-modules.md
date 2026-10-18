@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by:
 date: 2026-10-18
 ---
@@ -31,12 +31,12 @@ import it. Add it here, with the move, and not before.
 **Done when:** Atelier builds and its existing tests pass against TerminalKit; no `Kitty*` terminal
 module remains in Atelier; the six modules are exported.
 
-## Verified implementation and owning tests
+## Verified implementation, owning tests and consumer switch
 
-All six modules are present and exported. Their owning tests now live here too: 56 imported
-files from Atelier `ba01419`, plus the new codec boundary regression. Explicit release testability
-resolves the prior blocker (ADR-0012). The quality gate passes all seven targets.
+All six modules are present and exported. Their owning tests now live here too: 56 imported files
+from Atelier `ba01419`, plus the new codec boundary regression. Explicit release testability resolves
+the prior blocker (ADR-0012). The quality gate passes all seven targets.
 
-Atelier still carries its implementations. Consumer switchover and duplicate removal remain in
-entry 0003; this entry stays in progress until that is verified. Do not report a completed
-cross-repository extraction based only on the receiving package building.
+Atelier now consumes these modules through six compatibility re-exports, and its duplicate
+implementations and owning suites are removed: commit `f458d51`, pull request g-cqd/Atelier#4.
+All three Atelier packages pass their optimized suites. See entry 0003 for the verified results.
