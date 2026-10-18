@@ -7,7 +7,7 @@ date: 2026-10-18
 # 0004 — Guard the hot path's allocations
 
 Measure and enforce a justified allocation budget on real decoder workloads.
-ADR-0003 records the finding and the measurement conditions.
+ADR-0008 records the finding and the measurement conditions.
 
 ## Done
 

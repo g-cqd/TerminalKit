@@ -143,6 +143,17 @@ public enum DocumentationLayout {
         try markdownFiles(in: adrDirectory()).sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
 
+    /// The record numbers that more than one filename uses, each with those filenames.
+    ///
+    /// A record is cited by its number alone ("ADR-0008"), so two files sharing one make every
+    /// citation ambiguous. The number is the digits before the first hyphen.
+    public static func repeatedNumbers(in filenames: [String]) -> [String: [String]] {
+        let byNumber = Dictionary(grouping: filenames) { name in
+            String(name.prefix { $0 != "-" })
+        }
+        return byNumber.filter { $0.value.count > 1 }.mapValues { $0.sorted() }
+    }
+
     // MARK: - Lines
 
     /// The number of lines in a text file.
