@@ -151,7 +151,7 @@ public struct PixelChrome: Sendable, Equatable {
         id: UInt32, placement: UInt32, row: Int, column: Int, xOffset: Int = 0, yOffset: Int = 0, columns: Int = 0,
         rows: Int = 0, into bytes: inout ContiguousArray<UInt8>
     ) {
-        KittySequences.appendMoveCursor(row: row + 1, col: column + 1, to: &bytes)
+        EscapeSequences.appendMoveCursor(row: row + 1, col: column + 1, to: &bytes)
         let placement = GraphicsCommand.Placement(
             id: placement, zIndex: -1, xOffset: UInt32(max(0, xOffset)), yOffset: UInt32(max(0, yOffset)),
             columns: UInt32(max(0, columns)), rows: UInt32(max(0, rows)))

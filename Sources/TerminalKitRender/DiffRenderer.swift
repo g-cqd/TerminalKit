@@ -96,7 +96,7 @@ public enum DiffRenderer: Sendable {
         var lastStyle = Style.default
 
         for row in 0 ..< buffer.rows {
-            KittySequences.appendMoveCursor(row: row + 1, col: 1, to: &bytes)
+            EscapeSequences.appendMoveCursor(row: row + 1, col: 1, to: &bytes)
             for col in 0 ..< buffer.columns {
                 let cell = buffer[row, col]
 
@@ -144,7 +144,7 @@ public enum DiffRenderer: Sendable {
 
             if !emittedAnyCell {
                 if row != lastRow || col != lastCol {
-                    KittySequences.appendMoveCursor(
+                    EscapeSequences.appendMoveCursor(
                         row: row + 1,
                         col: col + 1,
                         to: &bytes

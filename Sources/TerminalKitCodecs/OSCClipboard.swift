@@ -1,6 +1,6 @@
 import Foundation
 
-/// The OSC 52 reply a terminal sends to ``KittySequences/requestClipboard``, and its parser.
+/// The OSC 52 reply a terminal sends to ``EscapeSequences/requestClipboard``, and its parser.
 public enum OSCClipboard: Sendable {
     /// One clipboard reply.
     public enum Reply: Sendable, Equatable {

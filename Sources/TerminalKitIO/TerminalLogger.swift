@@ -3,7 +3,7 @@ import os
 
 /// Runtime diagnostics through `os.Logger`. Messages are redacted by default; the `public:` variants are only for
 /// contents known to hold no sensitive data, such as static literals or enum cases.
-public enum KittyLogger: Sendable {
+public enum TerminalLogger: Sendable {
     private static let osLogger = Logger(subsystem: "com.kittytui", category: "runtime")
 
     public static func fault(_ message: String) {

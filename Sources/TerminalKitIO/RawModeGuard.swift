@@ -11,7 +11,7 @@ public struct RawModeGuard: ~Copyable, Sendable {
         do {
             try connection.restoreMode()
         } catch {
-            KittyLogger.fault(public: "RawModeGuard: tcsetattr restore failed; tty may be scrambled")
+            TerminalLogger.fault(public: "RawModeGuard: tcsetattr restore failed; tty may be scrambled")
         }
     }
 }
