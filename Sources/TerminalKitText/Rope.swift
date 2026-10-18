@@ -334,6 +334,10 @@ extension Rope {
     /// Holds lazy caches of the materialized text and line array; a mutation
     /// clones a shared storage, whose caches start empty, or invalidates them
     /// when the storage is uniquely held.
+    // SAFETY: `root` is written only while this storage is uniquely referenced — `ensureUnique()`
+    // precedes every mutation, so a shared storage is read-only for its whole lifetime. The two caches
+    // are the exception readers do write, and both go through a lock, so two threads materialising the
+    // same rope cannot tear each other's store.
     fileprivate final class Storage: @unchecked Sendable {
         /// Written only while the storage is uniquely referenced (`ensureUnique()` precedes every mutation), so a
         /// shared storage is read-only here; the caches below are the one thing readers write, and they go
@@ -375,6 +379,8 @@ extension Rope {
 
 /// Leaf payload as a class so the indirect-enum heap allocation is explicit
 /// and we can rely on standard ARC semantics.
+// SAFETY: every stored property is a `let` of a value type, so an instance is immutable from the moment
+// it is constructed and can never be observed half-written.
 final class LeafNode: @unchecked Sendable {
     let data: Data
     let newlineCount: Int
@@ -393,6 +399,8 @@ final class LeafNode: @unchecked Sendable {
 
 /// Branch payload as a class so the tree has explicit reference structure
 /// (CoW handled by `Rope.Storage`).
+// SAFETY: every stored property is a `let` of a value type, so an instance is immutable from the moment
+// it is constructed and can never be observed half-written.
 final class BranchNode: @unchecked Sendable {
     let left: RopeNode
     let right: RopeNode
