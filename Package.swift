@@ -101,8 +101,13 @@ let package = Package(
             swiftSettings: strictSettings),
         .testTarget(
             name: "TerminalKitCoreTests",
-            dependencies: ["TerminalKitCore", "TerminalKitTestSupport"],
+            dependencies: [
+                "TerminalKitCore",
+                "TerminalKitTestSupport",
+                .product(name: "AemiKernel", package: "aemi")
+            ],
             path: "Tests/TerminalKitCoreTests",
-            swiftSettings: strictSettings)
+            swiftSettings: strictSettings
+        )
     ]
 )
