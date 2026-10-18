@@ -108,6 +108,12 @@ let package = Package(
             ],
             path: "Tests/TerminalKitCoreTests",
             swiftSettings: strictSettings
+        ),
+        .testTarget(
+            name: "TerminalKitTestSupportTests",
+            dependencies: ["TerminalKitTestSupport"],
+            path: "Tests/TerminalKitTestSupportTests",
+            swiftSettings: strictSettings
         )
     ]
 )
