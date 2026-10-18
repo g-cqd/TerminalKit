@@ -7,10 +7,15 @@
 ///
 /// The recovery is a ladder, escalating cheapest first, so the user pays for the destructive tier
 /// only after the cheap ones have already failed — and never in the normal path at all.
+///
+/// The tier that clears private modes is the *first* one, not a reset: DECSTR does not reset them,
+/// and RIS resets them only by discarding the history. That is not a guess — ADR-0002 records the
+/// measurements across kitty, ghostty, wezterm and Terminal.app.
 public enum TerminalResetTier: String, Sendable, CaseIterable, Equatable {
   /// Turn off, individually and by name, the private modes a full-screen program turns on.
   case selectiveCleanup
-  /// DECSTR (`ESC [ ! p`): reset modes, cursor and attributes, preserving contents and scrollback.
+  /// DECSTR (`ESC [ ! p`): reset cursor, graphic rendition and margins. Does **not** reset DEC
+  /// private modes — measured against four emulators, which all leave them set. See ADR-0002.
   case softReset
   /// RIS (`ESC c`): reset everything, destroying scrollback. Last resort only.
   case fullReset
@@ -26,6 +31,10 @@ public enum TerminalResetLadder {
   public static let tiers: [TerminalResetTier] = [.selectiveCleanup, .softReset, .fullReset]
 
   /// The bytes that apply a single tier.
+  ///
+  /// Only ``softReset`` and ``fullReset`` carry a reset at all. ``selectiveCleanup`` is what actually
+  /// clears the private modes, because neither reset tier does it cheaply: DECSTR leaves them alone,
+  /// and RIS clears them at the price of the scrollback.
   public static func escapeBytes(for tier: TerminalResetTier) -> [UInt8] {
     switch tier {
     case .selectiveCleanup: selectiveCleanup

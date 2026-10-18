@@ -112,9 +112,18 @@ Every entry is a claim, the probe that tested it, and the verdict. It only grows
 | 4 | The terminal stack is three modules, 3,530 lines | `grep` of imports, extended through the closure | **REFUTED.** Six modules, 6,263 lines, including `AtelierText` from another package. |
 | 5 | A real kitty instance can verify the tiers from here | `kitty @ ls` | **REFUTED.** `open /dev/tty: device not configured` — kitty 0.49.2 is installed, but this session has no controlling TTY, so the emulator check cannot run here. |
 | 6 | A PTY is available for a harness | `util.h` in the macOS SDK | **CONFIRMED.** `openpty` is declared at `util.h:99`. Not yet used. |
+| 7 | The reset tiers can be verified against real terminals from here | `kitty --config NONE -o allow_remote_control=yes --listen-on=tcp:…` | **CONFIRMED, with care.** A dedicated kitty instance answers remote control. The first harness was wrong in two ways — `--extent=history` is not a valid extent, and double-quoted `\033` became a real ESC that `send-text` swallowed, so every tier ran as a no-op and reported PASS. |
+| 8 | kitty's remote control can be reached without touching the user's config | `kitty --help` for `--listen-on` and `-o` | **CONFIRMED.** A separate instance on a private port. No user config modified. |
+| 9 | A live terminal can be asked what modes it has set | DECRQM (`CSI ? Ps $ p`) round trip on `/dev/tty` | **CONFIRMED.** Replied with `n` for every query on kitty, ghostty, wezterm; **Terminal.app answers nothing**, so it is INCONCLUSIVE there. |
+| 10 | DECSTR resets DEC private modes | Same DECRQM probe, tier 2, four emulators | **REFUTED — by the emulators, against us.** DECSTR left `?1049`, the mouse modes and `?2004` set on kitty, ghostty and wezterm. The oracle and the docs were wrong. ADR-0002. |
+| 11 | The selective tier clears the private modes it names | Same probe, tier 1 | **CONFIRMED.** PASS on all three emulators that report mode state. This is the tier that does the work. |
+| 12 | Mode 25 behaves like the other private modes | DECRQM on `?25` | **REFUTED, twice.** `1` means *visible*. It made the oracle report a healthy terminal as broken, then made the first verifier do the same. Inverted handling is now explicit in both. |
 
 **Open questions — not probed, therefore not acted on:**
 
-- Whether DECSTR preserves scrollback on every terminal this will meet. The oracle asserts the
-  specification's behaviour; the emulator check has not run.
+- **Scrollback preservation is still unmeasured.** DECRQM reports modes, not history. Tiers 1 and 2
+  emit no `ESC c`, which is why they *cannot* clear the screen, but "spared the scrollback" is
+  structural reasoning plus an oracle, not a measurement.
+- **Terminal.app is unverified.** It answers no DECRQM. It needs a technique based on observable
+  screen state instead of mode queries.
 - Whether `openpty` is reachable from Swift without an Objective-C shim.
