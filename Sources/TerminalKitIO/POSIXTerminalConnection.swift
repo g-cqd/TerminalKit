@@ -117,6 +117,25 @@ public final class POSIXTerminalConnection: TerminalConnection, @unchecked Senda
         withTermiosLock { $0 = nil }
     }
 
+    /// Bytes available before `deadline`, using `poll` so the wait blocks in the kernel.
+    ///
+    /// `poll` rather than a read with a timer: it costs no CPU while waiting and no thread while
+    /// waiting, which is what a probe on a latency budget needs.
+    public func readAvailable(
+        until deadline: ContinuousClock.Instant,
+        into buffer: UnsafeMutableRawBufferPointer
+    ) throws(TerminalError) -> Int? {
+        // SAFETY: a one-element pollfd describing our own descriptor.
+        var descriptors = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+        // SAFETY: `descriptors` is a live single element, and `count` is its length.
+        let ready = withUnsafeMutablePointer(to: &descriptors) { pointer in
+            poll(pointer, 1, 0)
+        }
+        guard ready > 0 else { return 0 }
+        // SAFETY: `buffer` is the caller's live buffer.
+        return retryOnInterrupt { Int(Darwin.read(fd, buffer.baseAddress, buffer.count)) }
+    }
+
     /// Queries the terminal window size via `ioctl(TIOCGWINSZ)`.
     ///
     /// Falls back to trying `STDOUT_FILENO` then `STDERR_FILENO` if the primary
