@@ -6,8 +6,8 @@ date: 2026-10-18
 
 # 0003 — Atelier consumes TerminalKit instead of its own copies
 
-TerminalKit holds the six modules. Atelier now consumes them through six compatibility
-re-exports, and its duplicate implementations and owning suites are gone.
+TerminalKit holds the six modules. Atelier main imports them directly; its duplicate
+implementations, owning suites and temporary compatibility re-exports are gone.
 
 ## Blocker 2 resolved
 
@@ -28,7 +28,7 @@ explicitly requested. This is correctness validation, not a benchmark result.
 
 ## Consumer switch, verified
 
-Atelier commit `f458d51`, pull request g-cqd/Atelier#4, branch `chore/consume-terminalkit`:
+Atelier extraction commit `f458d51`, PR g-cqd/Atelier#4, merged to main as `384829e`:
 
 - Six implementation modules replaced by re-exports; 43 source files removed, 56 duplicate
   owning test files removed after their imported copies passed here.
@@ -41,10 +41,17 @@ Atelier commit `f458d51`, pull request g-cqd/Atelier#4, branch `chore/consume-te
 A compatibility suite checks canonical type identity across the old and new module names, with a
 negative control that restores the original local style implementation and observes the failure.
 
-## Remaining
+## Direct imports landed
 
-The six compatibility module names stay until callers migrate their imports. Removing them is a
-source-breaking cleanup, deliberately not bundled into the switch. `ask` pins the same revision.
+PR g-cqd/Atelier#5 merged to main as `7a6240b`. Six shim products and targets were removed;
+callers import the owning TerminalKit modules directly. Four temporary alias-identity tests were
+removed because their rewritten assertions were tautological; app integration coverage remains.
+
+Final native release suites with explicit testability: KittyCode 966 tests (seven executables),
+AtelierCore 1,628 (22 executables), GitDiffViewer 1,161; all exit 0. Strict formatting and lint pass.
+This is source-breaking for external callers using old product/module names. No universal absence
+of external consumers is claimed. `ask` and Atelier still pin `7a1f22a`; advancing to allocation
+changes requires coordinating their Aemi and AemiJSON revision requirements.
 
 ## Historical scope estimates — recheck before migration
 
