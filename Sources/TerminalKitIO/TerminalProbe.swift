@@ -36,8 +36,18 @@ internal import Synchronization
 public struct TerminalProbe: Sendable {
     /// How long to wait for a terminal to answer a single query.
     ///
-    /// Generous, because the only cost of waiting is startup, and the only cost of not waiting is a
-    /// capability silently reported as absent.
+    /// **Measured, and the number is the point.** On a PTY whose far end never replies — a terminal
+    /// that ignores both queries, which is what Terminal.app does — two queries at 250 ms each cost
+    /// **520 ms**. A terminal that *does* answer costs microseconds, because `poll` returns as soon as
+    /// the reply lands.
+    ///
+    /// So the cost is entirely the terminal's refusal to answer, and it is not small: against `ask`'s
+    /// 25 ms cold-start budget, a blocking probe is the single most expensive thing a terminal program
+    /// could do at launch.
+    ///
+    /// Callers on a latency budget must therefore either use a much shorter deadline, or — better —
+    /// probe **off** the startup path and keep conservative defaults until the answers arrive. The
+    /// capability is for improving behaviour once running, not for gating the first frame.
     public static let defaultTimeout = Duration.milliseconds(250)
 
     private let connection: any TerminalConnection
