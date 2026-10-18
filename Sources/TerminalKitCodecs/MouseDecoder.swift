@@ -170,7 +170,8 @@ public struct MouseDecoder: Sendable {
 
     private mutating func reset() {
         state = .ground
-        buffer.removeAll()
+        // `keepingCapacity`: `removeAll()` released the storage, so every mouse event reallocated it.
+        buffer.removeAll(keepingCapacity: true)
         buttonBits = 0
         coordX = 0
         coordY = 0

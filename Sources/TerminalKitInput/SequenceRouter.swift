@@ -86,7 +86,9 @@ public struct SequenceRouter: Sendable {
             case .ground:
                 if byte == 0x1b {
                     routeState = .escape
-                    buffer = [byte]
+                    // Reuse the buffer's storage: `buffer = [byte]` allocated on every escape sequence.
+                    buffer.removeAll(keepingCapacity: true)
+                    buffer.append(byte)
                 } else if (byte & 0b1000_0000) == 0 {
                     if case .complete(let key) = keyboardDecoder.feed(byte) {
                         events.append(.key(key))
@@ -109,7 +111,7 @@ public struct SequenceRouter: Sendable {
                         if let expectedBytes = Self.utf8ExpectedBytes(for: byte) {
                             beginUTF8Sequence(with: byte, expectedBytes: expectedBytes, modifiers: .alt)
                         } else {
-                            events.append(contentsOf: decodeKeyboardSequence(buffer))
+                            appendKeyboardSequence(buffer, into: &events)
                             resetRouting()
                         }
                 }
@@ -131,7 +133,7 @@ public struct SequenceRouter: Sendable {
                         events.append(.focusOut)
                         resetRouting()
                     case 0x75:
-                        events.append(contentsOf: decodeKeyboardSequence(buffer))
+                        appendKeyboardSequence(buffer, into: &events)
                         resetRouting()
                     case 0x30 ... 0x39:
                         routeState = .csiParam
@@ -181,7 +183,7 @@ public struct SequenceRouter: Sendable {
                 }
 
                 if byte == 0x75 {
-                    events.append(contentsOf: decodeKeyboardSequence(buffer))
+                    appendKeyboardSequence(buffer, into: &events)
                     resetRouting()
                     break
                 }
@@ -269,9 +271,10 @@ public struct SequenceRouter: Sendable {
                 buffer.append(byte)
                 // One step of the end-marker match per byte, rather than comparing the buffer's tail with it.
                 if advancePasteEndMarker(byte) {
-                    let pasteBytes = buffer.dropLast(Self.pasteEndMarker.count)
-                    // Invalid UTF-8 becomes U+FFFD rather than costing the whole paste.
-                    events.append(.paste(String(decoding: pasteBytes, as: UTF8.self)))
+                    // Invalid UTF-8 becomes U+FFFD rather than costing the whole paste. The slice must not outlive
+                    // this expression: still holding the buffer's storage, it made `resetRouting` copy it.
+                    let text = String(decoding: buffer.dropLast(Self.pasteEndMarker.count), as: UTF8.self)
+                    events.append(.paste(text))
                     resetRouting()
                 } else if buffer.count > Self.maxPasteSize {
                     events.append(.overflow(.paste))
@@ -302,7 +305,7 @@ public struct SequenceRouter: Sendable {
                     events.append(.key(KeyEvent(keyCode: keyCode)))
                     resetRouting()
                 } else {
-                    events.append(contentsOf: decodeKeyboardSequence([0x1b, 0x4f]))
+                    appendKeyboardSequence([0x1b, 0x4f] as [UInt8], into: &events)
                     resetRouting()
                     feed(byte, into: &events)
                 }
@@ -389,25 +392,22 @@ public struct SequenceRouter: Sendable {
         resetRouting()
     }
 
-    private mutating func decodeKeyboardSequence<S: Sequence>(_ bytes: S) -> [InputEvent]
+    /// Feeds `bytes` to the keyboard decoder and appends the event it completes, if any, to `events`.
+    /// Appending in place rather than returning an array keeps a decoded key free of allocation.
+    private mutating func appendKeyboardSequence<S: Sequence>(_ bytes: S, into events: inout [InputEvent])
     where S.Element == UInt8 {
-        var events: [InputEvent] = []
-
         for byte in bytes {
-            let result = keyboardDecoder.feed(byte)
-            switch result {
+            switch keyboardDecoder.feed(byte) {
                 case .pending:
                     continue
                 case .complete(let key):
                     events.append(.key(key))
-                    return events
+                    return
                 case .invalid(let invalidBytes):
                     events.append(.unknown(invalidBytes))
-                    return events
+                    return
             }
         }
-
-        return events
     }
 
     private mutating func resetRouting() {
@@ -442,7 +442,8 @@ public struct SequenceRouter: Sendable {
         expectedBytes: Int,
         modifiers: KeyModifiers
     ) {
-        utf8Buffer = [firstByte]
+        utf8Buffer.removeAll(keepingCapacity: true)
+        utf8Buffer.append(firstByte)
         utf8ExpectedBytes = expectedBytes
         utf8Modifiers = modifiers
         routeState = .utf8Sequence
