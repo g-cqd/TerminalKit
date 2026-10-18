@@ -47,7 +47,7 @@ let package = Package(
     dependencies: [
         // Pinned by revision, the mechanism the whole ecosystem uses — Aemi publishes no tags, and
         // Atelier has done it this way all along. The pin is current with Atelier's after ADR-0005.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "d0f8108bf205e92a3a683db072cf54b0badb40f1")
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "5f0c47c56223db4401d7a67d7792b02fe0b5b322")
     ],
     targets: [
         .target(name: "TerminalKitCore", path: "Sources/TerminalKitCore", swiftSettings: strictSettings),
@@ -105,7 +105,7 @@ let package = Package(
         ),
         .testTarget(
             name: "TerminalKitCodecsTests",
-            dependencies: ["TerminalKitCodecs"],
+            dependencies: ["TerminalKitCodecs", .product(name: "AemiTestKit", package: "aemi")],
             path: "Tests/TerminalKitCodecsTests",
             swiftSettings: strictSettings
         ),
