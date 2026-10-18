@@ -6,31 +6,34 @@ date: 2026-10-18
 
 # 0004 — Guard the hot path's allocations
 
-The runtime principle says fewest allocations, with ceilings that are measured rather than
-described. `ProcessFootprint` is committed and **tested in both directions** — it must report zero for
-work that allocates nothing and must report growth for work that demonstrably allocates, because a
-blind instrument would pass every ceiling in the project by reporting nothing.
+Measure and enforce a justified allocation budget on real decoder/rendering workloads.
+No quantitative hot-path ceiling is currently enforced.
 
-## What is blocked, and on what
+## Build blocker resolved
 
-The guard on a real hot path is **not** written, for two measured reasons.
+ADR-0012 resolves codec testability. The new owning suites compile, link and run with
+`swift test -c release --enable-testable-imports`; no metadata or resilience changes are needed.
+The earlier explanation about missing generic descriptors is false.
 
-**1. Aemi's `expectAllocations` is now reachable** — exporting `CAemiKernels` and
-`CAemiTestKitMalloc` as products fixed the resolution failure, which was the original blocker. Good.
+The renderer test target also imports AemiTestKit successfully at the existing `d0f8108` pin.
+Do not assume exposing additional C products is required to use it.
 
-**2. A generic-metadata link failure now blocks the decoder specifically.** Linking the test against
-`TerminalKitCodecs` fails with
+## Measurement work still required
 
-    Undefined symbols: "nominal type descriptor for TerminalKitCodecs.DecoderResult"
+- `ProcessFootprint` reports process-wide retained memory, not allocations per operation.
+  Its tests verify availability and detectable growth; they do not prove zero allocation or
+  proportional growth under parallel execution. Earlier claims of both-direction precision
+  were removed after flaky/failing experiments.
+- Inspect and validate Aemi's allocation counter in an isolated process before setting a budget.
+  The earlier thread-scope diagnosis is not a substitute for a controlled, synchronized probe.
+- Preserve results so the optimizer cannot eliminate the measured work. Confirm the instrument
+  detects an intentionally allocating control under the same configuration.
+- Keep throughput/latency measurements on a separate shipping release build, not the testable
+  build used for white-box correctness tests.
+- Promote reusable measurement helpers to Aemi rather than growing a terminal-specific copy.
 
-`DecoderResult` is fully declared in `Types.swift`, so this is metadata not being emitted for a public
-generic across a library boundary — not a missing definition, and not something the move introduced.
-It needs a decision (force the metadata, or give the library a `_exported`/resilience setting), and
-that decision belongs with whoever owns the kernel module.
+## Done when
 
-## The honest position
-
-An allocation ceiling on `KeyboardDecoder.feed` is **not yet enforced**, and nothing in the project
-should imply otherwise. The instrument is ready, verified in both directions, and waiting on one
-link-level decision. A principle with an unbuilt guard is still a principle; it is not yet a
-constraint.
+A reproducible isolated workload has a measured allocation baseline and ceiling, an intentionally
+allocating mutation exceeds it, and the normal workload stays inside it. Missing instrumentation
+must report inconclusive/failure rather than a false pass.

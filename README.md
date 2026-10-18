@@ -1,58 +1,61 @@
 # TerminalKit
 
-The terminal stack for the Aemi ecosystem, shared by Atelier's KittyCode and
-[`ask`](https://github.com/ask).
+A shared Swift terminal stack extracted from Atelier for KittyCode and `ask`.
+Repository: <https://github.com/g-cqd/TerminalKit>.
 
-A package of its own rather than a target inside Aemi. Terminal is neither a kernel runtime primitive
-nor an application tier — it is a third concern, with its own escape-sequence grammar, capability
-negotiation and release cadence. See
-[ADR-0001](docs/adr/0001-terminalkit-is-its-own-repository.md).
+Requires Swift 6.4 and macOS 26. Kernel utilities come from Aemi at the revision pinned in
+`Package.swift` and `Package.resolved`.
 
-## Read this first
+## Start here
 
-**[docs/WHITE-PAPER.md](docs/WHITE-PAPER.md)** — the rules this package runs on, led by the evidence
-rule: every claim is challenged and backed by an actual probe before it is adopted, and there is no
-place for an assumption.
-
-## Layout
-
-| Path | What |
-|---|---|
-| `docs/WHITE-PAPER.md` | The rules, and the probe ledger |
-| `docs/adr/` | One decision per file |
-| `docs/roadmap/` | One entry per file |
-| `docs/diary/` | The working log, capped at 256 lines per file |
+- [White paper](docs/WHITE-PAPER.md): stable principles, not experiment history.
+- [ADRs](docs/adr): decisions and supersession links.
+- [Roadmap](docs/roadmap): one file per work entry, including incomplete work.
+- [Diary](docs/diary): probe history, at most 256 lines per file.
 
 ## Products
 
-| Product | What |
+| Product | Responsibility |
 |---|---|
-| `TerminalKitCore` | Escape sequences and the tiered reset ladder. No file descriptor, no `termios`, no clock |
-| `TerminalKitTestSupport` | The oracle terminal model, so a consumer can test its own terminal layer the same way |
-| `TerminalKit` | Umbrella re-exporting the core. Test support is deliberately **not** re-exported |
+| `TerminalKitCore` | Reset sequence values |
+| `TerminalKitIO` | Terminal connections, raw mode and geometry |
+| `TerminalKitStyle` | Style value types |
+| `TerminalKitCodecs` | Escape encoders and keyboard/mouse decoders |
+| `TerminalKitInput` | Input routing and streams |
+| `TerminalKitText` | Rope, text operations and display metrics |
+| `TerminalKitRender` | Screen buffers, frame differences and output |
+| `TerminalKitTestSupport` | Terminal model and measurement helpers |
+| `TerminalKit` | Core re-export; excludes test support |
 
-## Status
-
-Early. `TerminalKitCore` holds the reset ladder; the rest of the stack has not been extracted yet.
-The GitHub remote does not exist — this repository is local only.
-
-## Building
+## Verify
 
 ```sh
-swift build -c release
-swift test  -c release
+Scripts/quality.sh --check
+# Or build/run optimized tests directly:
+swift test -c release --enable-testable-imports
+# Re-run that build without recompilation:
+swift test -c release --skip-build
 ```
 
-Release only. A debug build measures a program nobody ships.
+The gate runs format checks, SwiftLint metrics and optimized tests. Select testability explicitly
+for internal tests (SE-0455); `swift build --build-tests -c release` is not equivalent.
+See [ADR-0012](docs/adr/0012-explicit-release-testability.md) for the controlled reproduction.
 
-## How the reset ladder is verified
+Build shipping binaries and run performance measurements separately without testability.
 
-Three independent levels, because they are three different claims:
+## Progress
 
-1. **Byte-exact tests** — the encoder emits exactly the sequence intended.
-2. **Oracle tests** — a model of the terminal, written from the specification, agrees with those bytes.
-3. **Real-emulator tests** — **still owed.** A model is not a terminal.
+All six extracted modules compile, and the owning IO/codec/input/renderer/text suites run here.
+The current run reports **368 tests across seven targets**; opt-in performance benchmarks are
+skipped by default. This is correctness validation, not a new performance measurement.
 
-The third level has not run: kitty 0.49.2 is installed but no instance is reachable from a
-non-controlling-TTY session. See
-[roadmap 0002](docs/roadmap/0002-verify-against-a-real-terminal.md).
+Atelier still carries its copies: [entry 0003](docs/roadmap/0003-atelier-consumes-terminalkit.md)
+tracks the remaining consumer switch and duplicate removal. Quantitative allocation ceilings
+are also still pending in entry 0004.
+
+## Emulator verification
+
+Byte tests, the terminal model and emulator probes address different claims. Scripts under
+`Scripts/verify-*` exercise real emulators; their scope and limitations are recorded in
+[ADR-0004](docs/adr/0004-screen-and-scrollback-preservation-measured.md).
+Do not infer universal terminal behavior from a model or one emulator's result.
