@@ -4,32 +4,19 @@
 public enum EscapeSequences: Sendable {
     // MARK: - Lookup table for decimal encoding
 
-    /// Pre-computed decimal digits for values 0-65535.
-    private static let decimalTable: [(UInt8, UInt8, UInt8, UInt8, UInt8, UInt8)] = {
-        var table = [(UInt8, UInt8, UInt8, UInt8, UInt8, UInt8)](
-            repeating: (0, 0, 0, 0, 0, 0), count: 65536)
-        for i in 0 ..< 65536 {
-            let d5 = UInt8(i / 10_000)
-            let d4 = UInt8((i / 1_000) % 10)
-            let d3 = UInt8((i / 100) % 10)
-            let d2 = UInt8((i / 10) % 10)
-            let d1 = UInt8(i % 10)
-            let count: UInt8
-            if i >= 10_000 {
-                count = 5
-            } else if i >= 1_000 {
-                count = 4
-            } else if i >= 100 {
-                count = 3
-            } else if i >= 10 {
-                count = 2
-            } else {
-                count = 1
-            }
-            table[i] = (0x30 + d5, 0x30 + d4, 0x30 + d3, 0x30 + d2, 0x30 + d1, count)
+    /// Pre-computed digits for 0-999: three digit bytes and the digit count.
+    ///
+    /// Terminal coordinates and line counts fall in this range. A table for every `UInt16` cost 393 KB of
+    /// heap, built on the first cursor move, about a third of an interactive app's idle heap. Larger values
+    /// take the arithmetic path.
+    private static let decimalTable: [(UInt8, UInt8, UInt8, UInt8)] = (0 ..< 1_000)
+        .map { value in
+            let count: UInt8 = value >= 100 ? 3 : value >= 10 ? 2 : 1
+            return (0x30 + UInt8(value / 100), 0x30 + UInt8((value / 10) % 10), 0x30 + UInt8(value % 10), count)
         }
-        return table
-    }()
+
+    /// The digit table's size, so a test can hold it to its range.
+    static var decimalTableCount: Int { decimalTable.count }
 
     // MARK: - Synchronized Output (mode 2026)
 
@@ -303,31 +290,33 @@ public enum EscapeSequences: Sendable {
 
     // MARK: - Private
 
-    /// Decimal encoding for the optimized ContiguousArray path using lookup table.
+    /// Decimal encoding for the optimized ContiguousArray path: the table below 1000, arithmetic above.
     @inline(__always)
     private static func appendDecimal(_ bytes: inout ContiguousArray<UInt8>, _ value: UInt16) {
+        guard value < 1_000 else {
+            appendLargeDecimal(&bytes, value)
+            return
+        }
         let entry = decimalTable[Int(value)]
-        switch entry.5 {
-            case 5:
+        switch entry.3 {
+            case 3:
                 bytes.append(entry.0)
                 bytes.append(entry.1)
                 bytes.append(entry.2)
-                bytes.append(entry.3)
-                bytes.append(entry.4)
-            case 4:
+            case 2:
                 bytes.append(entry.1)
                 bytes.append(entry.2)
-                bytes.append(entry.3)
-                bytes.append(entry.4)
-            case 3:
-                bytes.append(entry.2)
-                bytes.append(entry.3)
-                bytes.append(entry.4)
-            case 2:
-                bytes.append(entry.3)
-                bytes.append(entry.4)
             default:
-                bytes.append(entry.4)
+                bytes.append(entry.2)
+        }
+    }
+
+    /// Four or five digits, written most significant first.
+    private static func appendLargeDecimal(_ bytes: inout ContiguousArray<UInt8>, _ value: UInt16) {
+        var divisor: UInt16 = value >= 10_000 ? 10_000 : 1_000
+        while divisor > 0 {
+            bytes.append(0x30 + UInt8((value / divisor) % 10))
+            divisor /= 10
         }
     }
 
