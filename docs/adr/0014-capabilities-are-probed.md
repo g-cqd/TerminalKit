@@ -60,11 +60,38 @@ it cannot implement a protocol carried inside APC.
 - A caller wanting synchronised output can **know** rather than assume. `ask` currently emits DEC 2026
   unconditionally; a probed answer would let it skip the markers on a terminal that ignores them.
 
+## The cost, measured — and it is disqualifying for a blocking probe
+
+Two queries on a PTY whose far end never replies:
+
+    trial 0: answered=0+0  probe cost = 518.5 ms
+    trial 1: answered=0+0  probe cost = 519.8 ms
+    trial 2: answered=0+0  probe cost = 520.1 ms
+
+A terminal that *does* answer costs microseconds — `poll` returns as soon as the reply lands. The entire
+cost is the terminal's refusal to answer, and Terminal.app is exactly such a terminal.
+
+**Against `ask`'s 25 ms cold-start budget, a blocking probe is roughly twenty times the entire budget.**
+A caller that probes before its first frame cannot meet it on a terminal that ignores queries.
+
+The first attempt at this measurement was invalid and worth recording: the PTY was left in canonical mode,
+so it echoed the query bytes straight back, `select` returned on the echo, and the probe appeared to cost
+0.01 ms. Only with the terminal in raw mode — no echo, as a real one runs — does the true cost appear.
+
+## Consequences for adoption
+
+- **`ask` must not block startup on this.** Either probe off the startup path and keep conservative
+  defaults until answers arrive, or use a deadline short enough to fit the budget and accept that a
+  loaded machine may produce false negatives. The first is the right answer; the second trades a
+  correctness bug for latency.
+- `defaultTimeout` therefore stays generous, because the type should not encode a policy that only one
+  caller can choose. The cost is documented on it, because a caller who does not read it will blow a
+  budget they never looked at.
+
 ## Follow-ups
 
-- The probe costs two round trips at startup, up to `defaultTimeout` each. That is charged against the
-  cold-start budget and **has not been measured** — it must be, before the probe is adopted by `ask`.
 - `TerminalCapabilities` still carries a single `supportsKittyGraphics` boolean. Splitting pixels from
   protocol is the obvious next step and belongs to whoever adopts it.
 - Nothing here queries the keyboard protocol's *progressively-enhanced* mode, which is the fix for
   ESC-ambiguity latency and therefore a budget item rather than a capability one.
+- A background probe needs a place to publish its answers. There is no seam for that yet.
