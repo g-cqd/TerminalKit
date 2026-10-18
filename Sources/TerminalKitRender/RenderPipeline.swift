@@ -138,20 +138,20 @@ public final class RenderPipeline {
         }
         outputBuffer.removeAll(keepingCapacity: true)
 
-        KittySequences.appendBeginSyncUpdate(to: &outputBuffer)
+        EscapeSequences.appendBeginSyncUpdate(to: &outputBuffer)
 
         if let hint = scrollHint, hint.delta != 0, hint.regionHeight > 0,
             hint.delta.magnitude < UInt(hint.regionHeight)
         {
             let top1 = hint.regionTop + 1  // 1-based
             let bottom1 = hint.regionTop + hint.regionHeight  // 1-based inclusive
-            KittySequences.appendSetScrollRegion(top: top1, bottom: bottom1, to: &outputBuffer)
+            EscapeSequences.appendSetScrollRegion(top: top1, bottom: bottom1, to: &outputBuffer)
             if hint.delta > 0 {
-                KittySequences.appendScrollUp(lines: hint.delta, to: &outputBuffer)
+                EscapeSequences.appendScrollUp(lines: hint.delta, to: &outputBuffer)
             } else {
-                KittySequences.appendScrollDown(lines: -hint.delta, to: &outputBuffer)
+                EscapeSequences.appendScrollDown(lines: -hint.delta, to: &outputBuffer)
             }
-            KittySequences.appendResetScrollRegion(to: &outputBuffer)
+            EscapeSequences.appendResetScrollRegion(to: &outputBuffer)
 
             // Shift front buffer rows (full width) to mirror the terminal scroll.
             front.shiftRows(
@@ -194,20 +194,20 @@ public final class RenderPipeline {
         // Render diff directly into our persistent buffer
         let hasDirty = !buffer.dirty.isEmpty
         if hasDirty {
-            KittySequences.appendHideCursor(to: &outputBuffer)
+            EscapeSequences.appendHideCursor(to: &outputBuffer)
             DiffRenderer.render(front: front, back: buffer, into: &outputBuffer)
         }
 
         chrome?.render(chromeElements, into: &outputBuffer)
 
         if let r = cursorRow, let c = cursorCol {
-            KittySequences.appendMoveCursor(row: r + 1, col: c + 1, to: &outputBuffer)
-            KittySequences.appendShowCursor(to: &outputBuffer)
+            EscapeSequences.appendMoveCursor(row: r + 1, col: c + 1, to: &outputBuffer)
+            EscapeSequences.appendShowCursor(to: &outputBuffer)
         } else {
-            KittySequences.appendHideCursor(to: &outputBuffer)
+            EscapeSequences.appendHideCursor(to: &outputBuffer)
         }
 
-        KittySequences.appendEndSyncUpdate(to: &outputBuffer)
+        EscapeSequences.appendEndSyncUpdate(to: &outputBuffer)
 
         if !outputBuffer.isEmpty {
             try connection.writeContiguous(outputBuffer)
@@ -234,18 +234,18 @@ public final class RenderPipeline {
         }
         outputBuffer.removeAll(keepingCapacity: true)
 
-        KittySequences.appendBeginSyncUpdate(to: &outputBuffer)
-        KittySequences.appendHideCursor(to: &outputBuffer)
+        EscapeSequences.appendBeginSyncUpdate(to: &outputBuffer)
+        EscapeSequences.appendHideCursor(to: &outputBuffer)
         DiffRenderer.renderFull(buffer, into: &outputBuffer)
         chrome?.invalidate()
         chrome?.render(chromeElements, into: &outputBuffer)
 
         if let r = cursorRow, let c = cursorCol {
-            KittySequences.appendMoveCursor(row: r + 1, col: c + 1, to: &outputBuffer)
-            KittySequences.appendShowCursor(to: &outputBuffer)
+            EscapeSequences.appendMoveCursor(row: r + 1, col: c + 1, to: &outputBuffer)
+            EscapeSequences.appendShowCursor(to: &outputBuffer)
         }
 
-        KittySequences.appendEndSyncUpdate(to: &outputBuffer)
+        EscapeSequences.appendEndSyncUpdate(to: &outputBuffer)
         try connection.writeContiguous(outputBuffer)
         front.adoptAllCells(from: buffer)
         buffer.dirty.clear()

@@ -1,7 +1,7 @@
 // Predates the size and complexity gates; reviewed opt-out tracked in g-cqd/Atelier#1.
 // swiftlint:disable large_tuple
 /// Static builders for the escape sequences the app writes: kitty extensions and the standard modes it toggles.
-public enum KittySequences: Sendable {
+public enum EscapeSequences: Sendable {
     // MARK: - Lookup table for decimal encoding
 
     /// Pre-computed decimal digits for values 0-65535.
