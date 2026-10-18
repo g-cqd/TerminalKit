@@ -40,6 +40,9 @@ printf '==> swiftlint (metrics, --strict)\n'
 swiftlint lint --strict --config .swiftlint.yml Sources Tests \
     || fail "SwiftLint metric violations"
 
+printf '==> isolated signal-safety probe\n'
+sh Scripts/verify-signal-safety.sh
+
 printf '==> build and test (release)\n'
 # Build and run optimized tests with testability explicitly enabled (SE-0455).
 # `swift build --build-tests -c release` does NOT imply this setting. `@testable` imports
