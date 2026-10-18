@@ -1,14 +1,14 @@
 ---
 status: accepted
 date: 2026-10-18
-supersedes: the isolation rule in 0003
+supersedes: the isolation rule in 0008
 ---
 
 # 0016 — The input router and frame flush allocate nothing, and every release suite checks it
 
 ## Context
 
-ADR-0003 set a zero ceiling for the keyboard decoder and ran it opt-in, in its own CI job, because
+ADR-0008 set a zero ceiling for the keyboard decoder and ran it opt-in, in its own CI job, because
 other suites' threads leaked into Aemi's counter. Entry 0004 still owed ceilings for the input router
 and the renderer's frame flush. Aemi ADR-0010 now counts only the measuring thread.
 

@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-18
 ---
 
-# 0003 — The keyboard decoder allocated once per keystroke, and a ceiling needs an empty process
+# 0008 — The keyboard decoder allocated once per keystroke, and a ceiling needs an empty process
 
 ## Context
 

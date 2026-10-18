@@ -84,3 +84,29 @@ struct WhitePaperTests {
         #expect(!text.contains("## Probe ledger"), "the probe history belongs in the diary")
     }
 }
+
+@Suite("A record number names one record")
+struct RecordNumberingTests {
+    @Test func `a number two records share is reported with both names`() {
+        // The collision this suite exists for: two ADRs were numbered 0003.
+        let names = [
+            "0002-decstr-does-not-reset-private-modes.md", "0003-canonical-style-synced-from-aemi.md",
+            "0003-decoder-allocated-per-keystroke.md", "0004-screen-and-scrollback-preservation-measured.md"
+        ]
+        #expect(
+            DocumentationLayout.repeatedNumbers(in: names) == [
+                "0003": ["0003-canonical-style-synced-from-aemi.md", "0003-decoder-allocated-per-keystroke.md"]
+            ])
+    }
+
+    @Test func `no two decision records share a number`() throws {
+        let names = try DocumentationLayout.adrFiles().map(\.lastPathComponent)
+        #expect(!names.isEmpty)
+        #expect(DocumentationLayout.repeatedNumbers(in: names).isEmpty, "repeated ADR numbers")
+    }
+
+    @Test func `no two roadmap entries share a number`() throws {
+        let names = try DocumentationLayout.roadmapEntries().map(\.url.lastPathComponent)
+        #expect(DocumentationLayout.repeatedNumbers(in: names).isEmpty, "repeated roadmap numbers")
+    }
+}
