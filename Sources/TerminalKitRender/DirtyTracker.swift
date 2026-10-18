@@ -70,8 +70,17 @@ public struct DirtyTracker: Sendable, Equatable {
 
     /// Returns ranges of contiguous dirty cells per row using word-level CTZ scanning.
     public func dirtyRanges(columns: Int) -> [(row: Int, colStart: Int, colEnd: Int)] {
-        guard columns > 0 else { return [] }
         var ranges: [(row: Int, colStart: Int, colEnd: Int)] = []
+        forEachDirtyRange(columns: columns) { row, colStart, colEnd in
+            ranges.append((row: row, colStart: colStart, colEnd: colEnd))
+        }
+        return ranges
+    }
+
+    /// Calls `body` with each run of contiguous dirty cells, row by row, in order, without
+    /// materializing them: the renderer walks these on every flush, which must not allocate.
+    public func forEachDirtyRange(columns: Int, _ body: (_ row: Int, _ colStart: Int, _ colEnd: Int) -> Void) {
+        guard columns > 0 else { return }
         let rows = capacity / columns
 
         for row in 0 ..< rows {
@@ -108,9 +117,8 @@ public struct DirtyTracker: Sendable, Equatable {
                     col += 1
                 }
 
-                ranges.append((row: row, colStart: dirtyStart, colEnd: col))
+                body(row, dirtyStart, col)
             }
         }
-        return ranges
     }
 }

@@ -22,7 +22,11 @@ public struct ScrollHint: Sendable {
 }
 
 /// Frame-phase signposts, under the `com.kittytui.render` subsystem in Instruments.
-private let signposter = OSSignposter(subsystem: "com.kittytui.render", category: "frame")
+///
+/// `os_signpost` with a value `OSSignpostID`, not `OSSignposter`: an `OSSignposter` interval state is an
+/// object, measured at three allocations per interval, and signposts are enabled by default, so every
+/// flush paid for them. These calls make none.
+private let signpostLog = OSLog(subsystem: "com.kittytui.render", category: "frame")
 
 /// Double-buffered render pipeline with synchronized output.
 @MainActor
@@ -36,9 +40,9 @@ public final class RenderPipeline {
     /// Persistent output buffer reused across frames to avoid allocation.
     private var outputBuffer = ContiguousArray<UInt8>()
 
-    /// Active signpost interval state — only one frame in flight at a time per
+    /// The open frame interval's signpost — only one frame in flight at a time per
     /// pipeline, so a single optional is sufficient.
-    private var activeFrameInterval: OSSignpostIntervalState?
+    private var activeFrameSignpost: OSSignpostID?
 
     /// The current number of columns in the render viewport.
     public var columns: Int { buffer.columns }
@@ -96,7 +100,9 @@ public final class RenderPipeline {
     public func beginFrame() {
         cursorRow = nil
         cursorCol = nil
-        activeFrameInterval = signposter.beginInterval("frame")
+        let frameSignpost = OSSignpostID(log: signpostLog)
+        os_signpost(.begin, log: signpostLog, name: "frame", signpostID: frameSignpost)
+        activeFrameSignpost = frameSignpost
     }
 
     /// Marks a screen region for repaint on the next frame; overlapping marks are fine.
@@ -128,13 +134,11 @@ public final class RenderPipeline {
     ///
     /// - Throws: `TerminalError` if the underlying connection write fails.
     public func flush() throws(TerminalError) {
-        let flushInterval = signposter.beginInterval("flush")
+        let flushSignpost = OSSignpostID(log: signpostLog)
+        os_signpost(.begin, log: signpostLog, name: "flush", signpostID: flushSignpost)
         defer {
-            signposter.endInterval("flush", flushInterval)
-            if let interval = activeFrameInterval {
-                signposter.endInterval("frame", interval)
-                activeFrameInterval = nil
-            }
+            os_signpost(.end, log: signpostLog, name: "flush", signpostID: flushSignpost)
+            endFrameSignpost()
         }
         outputBuffer.removeAll(keepingCapacity: true)
 
@@ -224,13 +228,11 @@ public final class RenderPipeline {
     ///
     /// - Throws: `TerminalError` if the underlying connection write fails.
     public func forceRedraw() throws(TerminalError) {
-        let redrawInterval = signposter.beginInterval("forceRedraw")
+        let redrawSignpost = OSSignpostID(log: signpostLog)
+        os_signpost(.begin, log: signpostLog, name: "forceRedraw", signpostID: redrawSignpost)
         defer {
-            signposter.endInterval("forceRedraw", redrawInterval)
-            if let interval = activeFrameInterval {
-                signposter.endInterval("frame", interval)
-                activeFrameInterval = nil
-            }
+            os_signpost(.end, log: signpostLog, name: "forceRedraw", signpostID: redrawSignpost)
+            endFrameSignpost()
         }
         outputBuffer.removeAll(keepingCapacity: true)
 
@@ -249,6 +251,13 @@ public final class RenderPipeline {
         try connection.writeContiguous(outputBuffer)
         front.adoptAllCells(from: buffer)
         buffer.dirty.clear()
+    }
+
+    /// Closes the frame interval `beginFrame()` opened, if one is open.
+    private func endFrameSignpost() {
+        guard let frameSignpost = activeFrameSignpost else { return }
+        os_signpost(.end, log: signpostLog, name: "frame", signpostID: frameSignpost)
+        activeFrameSignpost = nil
     }
 
     /// Resizes both the front and back buffers to the new viewport dimensions.
