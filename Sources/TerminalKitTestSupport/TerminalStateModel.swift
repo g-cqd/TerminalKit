@@ -152,17 +152,23 @@ public struct TerminalStateModel: Sendable {
     activeGraphicRenditions = parameters.isEmpty ? [] : Set(parameters)
   }
 
-  /// DECSTR (`CSI ! p`) resets modes, cursor and attributes but keeps the screen and the history.
-  /// RIS (`ESC c`) resets those too and additionally discards both.
+  /// DECSTR (`CSI ! p`) is a *soft* reset: the cursor, graphic rendition and margins. It does
+  /// **not** reset DEC private modes — measured against kitty, ghostty and wezterm, each of which
+  /// leaves the alternate screen, the mouse modes and bracketed paste set. RIS (`ESC c`) does reset
+  /// them, and discards the screen and history to do it.
+  ///
+  /// This model used to clear the modes on DECSTR, which is what made an "the soft tier resets every
+  /// mode" test pass. Both were wrong, and only a real terminal could have shown it: the model and
+  /// the assertion agreed with each other and all three disagreed with three emulators. ADR-0002.
   private mutating func resetAll(preservingHistory: Bool) {
-    enabledPrivateModes.removeAll()
-    isCursorVisible = true
-    activeGraphicRenditions.removeAll()
     if !preservingHistory {
+      enabledPrivateModes.removeAll()
       screenLines.removeAll()
       scrollbackLines.removeAll()
       currentLine = ""
     }
+    isCursorVisible = true
+    activeGraphicRenditions.removeAll()
   }
 
   private mutating func appendPrintable(_ byte: UInt8) {

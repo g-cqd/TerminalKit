@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by:
 date: 2026-10-18
 ---
@@ -20,5 +20,18 @@ is gone.
 0.49.2 is installed, but this session has no controlling TTY, so no remote-controlled kitty instance is
 reachable. The check needs either an instance with `allow_remote_control`, or a headless emulator.
 
-**Still open regardless:** whether DECSTR preserves scrollback on *every* terminal this will meet. The
-oracle asserts the specification; only an emulator answers the real question.
+## Done — measured against four emulators
+
+A DECRQM verifier now runs each tier inside real terminals launched as `-e /bin/sh -c`, so no shell
+configuration contributes escape sequences. **Tier 1 passes on kitty, ghostty and wezterm.**
+
+It also **refuted us**: DECSTR resets no DEC private mode on any of them, which the oracle and the
+docs had asserted. Corrected in ADR-0002. Terminal.app answers no DECRQM at all and is INCONCLUSIVE.
+
+## Still open
+
+- **Scrollback preservation is unmeasured.** DECRQM reports modes, not history. The claim that tiers 1
+  and 2 spare the scrollback rests on their emitting no `ESC c`, plus the oracle.
+- **Terminal.app needs a different technique** — observable screen state rather than mode queries.
+- The verifier is currently a script in `/tmp`, not a committed tool. It should live in this package
+  so the claim can be re-run by anyone.

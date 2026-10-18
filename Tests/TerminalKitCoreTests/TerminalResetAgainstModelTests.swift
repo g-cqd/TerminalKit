@@ -42,19 +42,33 @@ struct TerminalResetAgainstModelTests {
     #expect(model.scrollbackLines == before)
   }
 
-  @Test func `the soft tier resets every mode a full-screen session sets`() {
-    // DECSTR must be at least as complete as the selective tier, or escalating past it would be
-    // pointless — a user stuck in a mode the soft tier also fails to clear has nowhere left to go.
+  @Test func `the soft tier leaves the private modes exactly as they were`() {
+    // DECSTR is a *soft* reset. It does not touch DEC private modes, and this is measured rather
+    // than assumed: kitty, ghostty and wezterm each leave the alternate screen, the mouse modes and
+    // bracketed paste set after `ESC [ ! p`. ADR-0002 carries the numbers.
+    //
+    // The test used to assert the opposite, and passed, because the model agreed with it. Both were
+    // wrong together — which is precisely the failure an oracle exists to catch, and the reason a
+    // model alone was never going to be enough.
     var model = sessionWithEverythingOn()
+    let before = model.enabledPrivateModes
+
     model.consume(TerminalResetLadder.escapeBytes(for: .softReset))
 
     #expect(
-      model.hasNoPrivateModesEnabled,
-      "DECSTR left private modes enabled: \(model.enabledPrivateModes)")
-    #expect(!model.isAlternateScreen, "DECSTR left the alternate screen on")
-    #expect(!model.isBracketedPasteEnabled, "DECSTR left bracketed paste on")
+      model.enabledPrivateModes == before, "DECSTR changed the private modes, which it must not")
+    #expect(
+      model.isAlternateScreen, "DECSTR left the alternate screen, contradicting three emulators")
+  }
+
+  @Test func `the soft tier still restores the cursor and the rendition`() {
+    // What DECSTR *does* reset: presentation state. A terminal left with the cursor hidden or bold
+    // text is still broken, so this tier earns its place even though it clears no modes.
+    var model = sessionWithEverythingOn()
+    model.consume(TerminalResetLadder.escapeBytes(for: .softReset))
+
     #expect(model.isCursorVisible, "DECSTR left the cursor hidden")
-    #expect(model.isAtDefaultGraphicRendition, "DECSTR left attributes set")
+    #expect(model.isAtDefaultGraphicRendition, "DECSTR left graphic rendition set")
   }
 
   @Test func `the soft tier spares the scrollback`() {
