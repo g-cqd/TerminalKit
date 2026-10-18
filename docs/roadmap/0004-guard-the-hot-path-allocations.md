@@ -1,39 +1,32 @@
 ---
-status: not-started
+status: done
 blocked-by:
 date: 2026-10-18
 ---
 
 # 0004 — Guard the hot path's allocations
 
-Measure and enforce a justified allocation budget on real decoder/rendering workloads.
-No quantitative hot-path ceiling is currently enforced.
+Measure and enforce a justified allocation budget on real decoder workloads.
+ADR-0003 records the finding and the measurement conditions.
 
-## Build blocker resolved
+## Done
 
-ADR-0012 resolves codec testability. The new owning suites compile, link and run with
-`swift test -c release --enable-testable-imports`; no metadata or resilience changes are needed.
-The earlier explanation about missing generic descriptors is false.
+- The counter was validated in the same configuration before any budget was set: 1,000 string
+  allocations count 1,011, and the instrument detects a deliberate allocation as a control.
+- The decoder's hot path was measured: **1,335 allocations per 1,000 keystrokes**, from
+  `removeAll()` releasing the buffer's storage. Fixed with `keepingCapacity: true`; now **0**.
+- The ceiling is enforced: `count == 0` for 1,000 keystrokes, with a control that must detect an
+  allocation. Reverting the fix reports exactly 1,000 and fails; restoring it passes.
+- The measurement runs in an empty process: opt-in through `TERMINALKIT_ALLOC=1`, `.serialized`
+  within its suite, and a CI job of its own. In the full suite the same measurement read as 101
+  because other suites' threads contribute; a ceiling judged against that would be a ceiling on the
+  test runner.
+- Missing instrumentation fails the test rather than passing it.
+- The reusable helper was promoted to Aemi as `minimumAllocations(repeats:body:)`.
 
-The renderer test target also imports AemiTestKit successfully at the existing `d0f8108` pin.
-Do not assume exposing additional C products is required to use it.
+## Still owed
 
-## Measurement work still required
-
-- `ProcessFootprint` reports process-wide retained memory, not allocations per operation.
-  Its tests verify availability and detectable growth; they do not prove zero allocation or
-  proportional growth under parallel execution. Earlier claims of both-direction precision
-  were removed after flaky/failing experiments.
-- Inspect and validate Aemi's allocation counter in an isolated process before setting a budget.
-  The earlier thread-scope diagnosis is not a substitute for a controlled, synchronized probe.
-- Preserve results so the optimizer cannot eliminate the measured work. Confirm the instrument
-  detects an intentionally allocating control under the same configuration.
-- Keep throughput/latency measurements on a separate shipping release build, not the testable
-  build used for white-box correctness tests.
-- Promote reusable measurement helpers to Aemi rather than growing a terminal-specific copy.
-
-## Done when
-
-A reproducible isolated workload has a measured allocation baseline and ceiling, an intentionally
-allocating mutation exceeds it, and the normal workload stays inside it. Missing instrumentation
-must report inconclusive/failure rather than a false pass.
+- Ceilings for the other hot paths: the renderer's frame flush, and the input router. The same
+  isolation rule applies, and the same measurement conditions.
+- Throughput and latency continue to be measured on a separate shipping release build, never on the
+  testable build used for white-box correctness.
