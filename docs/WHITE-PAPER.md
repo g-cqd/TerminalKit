@@ -11,7 +11,13 @@ excludes something that would otherwise look like an optimisation.
 
 **A lightweight runtime.** A binary links only what it uses. No umbrella target that re-exports
 everything, no speculative generality, no framework pulled in for one function. Startup cost is paid
-once per process, so every linked module is paid for at every launch.
+once per process, so what a binary **links** is paid for at every launch.
+
+That is link **weight**, not module **count**. Measured in `ask`: one target versus twenty changed
+spawn time by 0.067 ms, inside noise, so fine-grained targets are free and the discipline belongs on
+what is linked rather than on how many modules carry it. This sentence previously said every linked
+*module* was paid for per launch; it was not measurable, and a wrong principle outlives the
+investigation that found it. The two white papers must not diverge, and one had drifted.
 
 **Fewest allocations.** Allocation is not free and it is not only slow — it fragments, and a fragmented
 allocator costs more in cache misses than the work that needed it. The hot path allocates zero times,
@@ -28,6 +34,21 @@ other. No `-Ounchecked`, no disabled bounds or overflow checks, no `unsafe` that
 justified in a comment. The way to be both fast and safe is to **do less work** — diff a frame instead
 of repainting it, reuse a buffer instead of allocating one, decode a byte once instead of re-scanning
 it — not to remove the checks that catch the bugs.
+
+**Modern primitives, and a written reason for every escape.** The floor is macOS 26, so `Mutex`,
+`Atomic`, `InlineArray`, `Span` and `RawSpan` all compile — reaching for `NSLock`, `os_unfair_lock`,
+`pthread_mutex` or `DispatchQueue` is not a compatibility decision and is banned. Shared mutable state
+is guarded by a `Mutex` or an `Atomic`; an actor is for a real async boundary or an invariant that must
+hold across an `await`, and is the last resort rather than the default. `@unchecked Sendable` is
+permitted only with the invariant written next to it, because a file descriptor cannot be made checked.
+`@concurrent` and `nonisolated` are the default answer for anything that does not need an actor.
+
+**Tests are deterministic.** No `Task.yield`, no `Task.sleep`, no polling, no wall-clock assertion. Wait
+on the event instead — Aemi's `AsyncEventProbe` under a `TestClock`, or a `CheckedContinuation` the code
+under test resumes. A test that depends on scheduling can pass for the wrong reason.
+
+Every one of these is enforced by `SourceStandards` rather than requested, and each rule was probed by
+breaking it with a violation that compiles.
 
 **Every claim is measured.** A performance claim without before-and-after numbers, same harness, same
 configuration, with units, is not a claim this project will act on.
