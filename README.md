@@ -46,12 +46,13 @@ Build shipping binaries and run performance measurements separately without test
 ## Progress
 
 All six extracted modules compile, and the owning IO/codec/input/renderer/text suites run here.
-The current run reports **368 tests across seven targets**; opt-in performance benchmarks are
-skipped by default. This is correctness validation, not a new performance measurement.
+The current release run reports **397 tests across seven targets**; opt-in performance benchmarks
+are skipped by default. This is correctness validation, not a new performance measurement.
 
-Atelier still carries its copies: [entry 0003](docs/roadmap/0003-atelier-consumes-terminalkit.md)
-tracks the remaining consumer switch and duplicate removal. Quantitative allocation ceilings
-are also still pending in entry 0004.
+Atelier consumes these modules directly, with no copies left
+([entry 0003](docs/roadmap/0003-atelier-consumes-terminalkit.md)). The keyboard decoder, the input
+router and the frame flush allocate nothing on their hot paths, and every release suite enforces it
+([ADR-0016](docs/adr/0016-hot-path-ceilings-in-every-suite.md)).
 
 ## Emulator verification
 
