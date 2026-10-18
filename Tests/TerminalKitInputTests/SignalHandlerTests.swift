@@ -102,6 +102,32 @@ struct SignalHandlerTests {
         #expect(throws: SignalHandlerError.alreadyRunning) { try second.start() }
     }
 
+    @Test func `stopping an unstarted handler cannot stop the active owner`() throws {
+        let owner = SignalHandler(onResize: {}, onShutdown: { _ in })
+        try owner.start()
+        defer { owner.stop() }
+
+        let stranger = SignalHandler(onResize: {}, onShutdown: { _ in })
+        stranger.stop()
+
+        let contender = SignalHandler(onResize: {}, onShutdown: { _ in })
+        #expect(throws: SignalHandlerError.alreadyRunning) { try contender.start() }
+    }
+
+    @Test func `stopping twice does not stop the next owner`() throws {
+        let first = SignalHandler(onResize: {}, onShutdown: { _ in })
+        try first.start()
+        first.stop()
+
+        let second = SignalHandler(onResize: {}, onShutdown: { _ in })
+        try second.start()
+        defer { second.stop() }
+        first.stop()
+
+        let contender = SignalHandler(onResize: {}, onShutdown: { _ in })
+        #expect(throws: SignalHandlerError.alreadyRunning) { try contender.start() }
+    }
+
     @Test func `stopping releases the pipe so another handler may start`() throws {
         let first = SignalHandler(onResize: {}, onShutdown: { _ in })
         try first.start()

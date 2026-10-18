@@ -50,6 +50,9 @@ let package = Package(
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "5f0c47c56223db4401d7a67d7792b02fe0b5b322")
     ],
     targets: [
+        .target(
+            name: "CTerminalSignals",
+            path: "Sources/CTerminalSignals"),
         .target(name: "TerminalKitCore", path: "Sources/TerminalKitCore", swiftSettings: strictSettings),
         .target(
             name: "TerminalKitTestSupport",
@@ -84,7 +87,8 @@ let package = Package(
         .target(
             name: "TerminalKitInput",
             dependencies: [
-                "TerminalKitCodecs", "TerminalKitIO", .product(name: "AemiKernel", package: "aemi")
+                "TerminalKitCodecs", "TerminalKitIO", "CTerminalSignals",
+                .product(name: "AemiKernel", package: "aemi")
             ],
             path: "Sources/TerminalKitInput",
             swiftSettings: strictSettings),

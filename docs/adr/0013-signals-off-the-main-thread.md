@@ -1,9 +1,13 @@
 ---
-status: accepted
+status: superseded
+superseded-by: ADR-0015
 date: 2026-10-18
 ---
 
 # 0013 — Signals are delivered off the main thread, and the handler reports which one fired
+
+> **Superseded by ADR-0015.** Off-main delivery was necessary but insufficient: the Swift callback
+> still took a mutex in signal context. ADR-0015 also corrects descriptor lifetime and stop ownership.
 
 ## Context
 
