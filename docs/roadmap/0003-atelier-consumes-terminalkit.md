@@ -24,10 +24,17 @@ found, and the one approach that verifiably works.
 testability, so the 107 white-box files cannot stay in Atelier. Those suites must move here. This is
 why the switchover is not "delete six directories".
 
-**2. This package emits no metadata for its public generics.** `TerminalKitCodecs.o` holds zero
-nominal type descriptors for `DecoderResult`, so a test target linking the product cannot link. The
-obvious remedy does not exist in Swift 6.4. **Blocker 2 must be solved first** — without it the moved
-suites cannot even build here.
+**2. Unexplained testability inconsistency — UNSOLVED.** A test target cannot `@testable import`
+`TerminalKitCodecs`, though a plain import of the same module builds and links in release. In a verbose
+build `-enable-testing` is passed to the test targets and to `TerminalKitRender`/`TerminalKitInput`,
+but not to `TerminalKitCodecs`, `TerminalKitIO`, `TerminalKitStyle` or `TerminalKitText`. Aemi is
+ruled out as the cause by probe; this package's `unsafeFlags` are gone and it persists.
+
+An earlier version of this entry blamed missing metadata. **That was wrong** and is retracted in
+ADR-0011: the descriptor is present and exported, and the original grep could not have found it
+because `nm` prints mangled names.
+
+**Blocker 2 must be solved first** — without it the moved suites cannot build here.
 
 ## The approach, in order
 
