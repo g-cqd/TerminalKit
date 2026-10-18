@@ -141,6 +141,11 @@ is better without it.
 Atomic and buildable. The message states **why**. Never mix a refactor and a behaviour change. Slice
 by behaviour. Report residual risk and follow-ups explicitly.
 
+**Banned: `-warn-long-*`, as much as `-Ounchecked`.** A target carrying `unsafeFlags` is not built
+with `-enable-testing`, so `@testable import` of it fails — a warning threshold silently costing the
+ability to test the thing at all. These flags were here from the first commit and it took inheriting
+3,096 lines of white-box tests to find out. ADR-0010.
+
 ## 7. Bans
 
 Unmeasured optimisation. Unprobed claims. Best-run reporting. Debug-build benchmarking. Sleeps or
