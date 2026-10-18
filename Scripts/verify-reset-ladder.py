@@ -64,6 +64,29 @@ def decrqm(fd, mode):
     seg = reply[i + len(needle): j]
     return int(seg) if seg.isdigit() else None
 
+def dsr_cursor(fd, seconds=0.6):
+    """Ask the terminal where the cursor is: DSR (CSI 6 n) answers CSI row ; col R.
+
+    This is the one screen query that works in every terminal, including Terminal.app,
+    which answers no DECRQM at all. It reads the terminal's own cursor state, so it
+    needs no remote-control API and no accessibility permission.
+    """
+    os.write(fd, b"\x1b[6n")
+    reply = read_reply(fd, seconds)
+    i = reply.find(b"\x1b[")
+    if i < 0:
+        return None
+    j = reply.find(b"R", i)
+    if j < 0:
+        return None
+    seg = reply[i + 2:j].decode("ascii", "replace")
+    try:
+        row, col = seg.split(";")
+        return int(row), int(col)
+    except ValueError:
+        return None
+
+
 def make_messy(fd):
     for m in (1049, 1000, 1002, 1003, 1006, 1015, 2004):
         os.write(fd, b"\x1b[?%dh" % m)
@@ -135,6 +158,38 @@ try:
             say("  %s: FAIL — still set: %s" % (label, ", ".join("%d(%s)" % (m, n) for m, n, v in still_set)))
         else:
             say("  %s: PASS — every mode queried is reset" % label)
+    # ---- Screen state ----
+    # DECRQM reports modes, not history, so it cannot answer whether the scrollback
+    # survived. DSR answers in every terminal, including Terminal.app, and an external
+    # reader can confirm the sentinels afterwards.
+    say("")
+    say("SCREEN STATE — cursor position and sentinels")
+    # Return to a clean main screen first. The mode probes above deliberately leave the terminal
+    # inside the alternate screen, and measuring there confuses "the tier moved the cursor" with
+    # "the tier switched screens" — which is how the first run of this reported a false MOVED.
+    os.write(fd, RIS)
+    time.sleep(0.4)
+    os.write(fd, b"\x1b[2J\x1b[H")
+    time.sleep(0.2)
+    os.write(fd, b"\r\nSENTINEL-TIER0-KEEP\r\n")
+    for i in range(400):
+        os.write(fd, ("FILLER-%03d\r\n" % i).encode())
+    time.sleep(0.3)
+    before = dsr_cursor(fd)
+    say("  cursor after filling the screen: %s" % (before,))
+
+    os.write(fd, TIER1); time.sleep(0.25)
+    after1 = dsr_cursor(fd)
+    say("  cursor after tier 1 (selective): %s   %s"
+        % (after1, "unchanged — screen not cleared" if after1 == before else "MOVED"))
+    os.write(fd, b"\r\nSENTINEL-AFTER-TIER1-KEEP\r\n"); time.sleep(0.2)
+
+    os.write(fd, DECSTR); time.sleep(0.25)
+    after2 = dsr_cursor(fd)
+    say("  cursor after tier 2 (DECSTR):    %s   %s"
+        % (after2, "reset to home, as a soft reset specifies" if after2 == (1, 1) else "not home"))
+    os.write(fd, b"\r\nSENTINEL-AFTER-TIER2-KEEP\r\n"); time.sleep(0.2)
+
     say("")
     say("Scrollback preservation is NOT decided by this check: DECRQM reports modes,")
     say("not history. Tiers 1 and 2 emitting no ESC c is the structural reason they")

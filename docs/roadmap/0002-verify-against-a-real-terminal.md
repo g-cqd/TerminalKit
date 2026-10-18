@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by:
 date: 2026-10-18
 ---
@@ -28,10 +28,19 @@ configuration contributes escape sequences. **Tier 1 passes on kitty, ghostty an
 It also **refuted us**: DECSTR resets no DEC private mode on any of them, which the oracle and the
 docs had asserted. Corrected in ADR-0002. Terminal.app answers no DECRQM at all and is INCONCLUSIVE.
 
-## Still open
+## Done — ADR-0004
 
-- **Scrollback preservation is unmeasured.** DECRQM reports modes, not history. The claim that tiers 1
-  and 2 spare the scrollback rests on their emitting no `ESC c`, plus the oracle.
-- **Terminal.app needs a different technique** — observable screen state rather than mode queries.
-- The verifier is currently a script in `/tmp`, not a committed tool. It should live in this package
-  so the claim can be re-run by anyone.
+Screen preservation through tiers 1 and 2 is **measured** on kitty, wezterm and Terminal.app, read back
+from outside the terminal. History preservation is **measured on kitty** (100 filler lines still
+retrievable after both tiers).
+
+Terminal.app is now verifiable for screen state via AppleScript even though it answers no DECRQM, so
+its *mode* state stays inconclusive — a terminal limitation, not a gap in the ladder.
+
+Both scripts are committed: `Scripts/verify-reset-ladder.py` runs inside a terminal,
+`Scripts/verify-screen-against-emulators.sh` launches all four and reads each screen back.
+
+## Still open, as capability gaps rather than design gaps
+
+- **ghostty exposes no text-extraction API**, so it is verified for modes only.
+- **History is not extractable** from wezterm or Terminal.app through the interfaces used here.
