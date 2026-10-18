@@ -39,9 +39,17 @@ let package = Package(
         .library(name: "TerminalKitIO", targets: ["TerminalKitIO"]),
         .library(name: "TerminalKitText", targets: ["TerminalKitText"]),
         .library(name: "TerminalKitStyle", targets: ["TerminalKitStyle"]),
+        .library(name: "TerminalKitCodecs", targets: ["TerminalKitCodecs"]),
+        .library(name: "TerminalKitRender", targets: ["TerminalKitRender"]),
+        .library(name: "TerminalKitInput", targets: ["TerminalKitInput"]),
         // Umbrella — re-exports the core. Test support stays out, so shipping code never links the
         // oracle by accident.
         .library(name: "TerminalKit", targets: ["TerminalKit"])
+    ],
+    dependencies: [
+        // Pinned by revision, the mechanism the whole ecosystem uses — Aemi publishes no tags, and
+        // Atelier has done it this way all along. The pin is current with Atelier's after ADR-0005.
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "d0f8108bf205e92a3a683db072cf54b0badb40f1")
     ],
     targets: [
         .target(name: "TerminalKitCore", path: "Sources/TerminalKitCore", swiftSettings: strictSettings),
@@ -58,6 +66,29 @@ let package = Package(
         .target(
             name: "TerminalKitIO",
             path: "Sources/TerminalKitIO",
+            swiftSettings: strictSettings),
+        .target(
+            name: "TerminalKitCodecs",
+            dependencies: [
+                .product(name: "AemiKernel", package: "aemi"),
+                "TerminalKitStyle",
+                "TerminalKitIO"
+            ],
+            path: "Sources/TerminalKitCodecs",
+            swiftSettings: strictSettings),
+        .target(
+            name: "TerminalKitRender",
+            dependencies: [
+                "TerminalKitCodecs", "TerminalKitStyle", "TerminalKitIO", "TerminalKitText"
+            ],
+            path: "Sources/TerminalKitRender",
+            swiftSettings: strictSettings),
+        .target(
+            name: "TerminalKitInput",
+            dependencies: [
+                "TerminalKitCodecs", "TerminalKitIO", .product(name: "AemiKernel", package: "aemi")
+            ],
+            path: "Sources/TerminalKitInput",
             swiftSettings: strictSettings),
         .target(
             name: "TerminalKitText",
