@@ -1,10 +1,14 @@
 ---
-status: accepted
+status: superseded
+superseded-by: ADR-0012
 supersedes-part-of: ADR-0010
 date: 2026-10-18
 ---
 
 # 0011 — Blocker 2 was not a metadata problem, and the previous diagnosis was wrong
+
+> Resolved by ADR-0012: explicit release testability fixes the reproduction. The metadata
+> retraction below stands; its remaining speculation and the `unsafeFlags` claim do not.
 
 ## The retraction
 

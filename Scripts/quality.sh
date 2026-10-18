@@ -41,8 +41,10 @@ swiftlint lint --strict --config .swiftlint.yml Sources Tests \
     || fail "SwiftLint metric violations"
 
 printf '==> build and test (release)\n'
-# Release, always: this package exists for latency, and a debug build measures a program nobody runs.
-swift build -c release
-swift test -c release
+# Build and run optimized tests with testability explicitly enabled (SE-0455).
+# `swift build --build-tests -c release` does NOT imply this setting. `@testable` imports
+# need it; benchmark/shipping binaries must instead use a separate ordinary release build.
+# One test command builds the test graph once, rather than first rebuilding it without testability.
+swift test -c release --enable-testable-imports
 
 printf '\n[OK] clean\n'

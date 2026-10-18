@@ -1,10 +1,15 @@
 ---
-status: accepted
+status: superseded
+superseded-by: ADR-0012
 partially-corrected-by: ADR-0011
 date: 2026-10-18
 ---
 
 # 0010 — `unsafeFlags` silently disables `@testable`, and the Atelier move is blocked on two hard limits
+
+> Historical, incorrect diagnosis. ADR-0012 reproduces the failure by changing the build command
+> and passes the test even with both timing flags restored. Do not apply this record's blanket
+> claims about `unsafeFlags` or package boundaries. The original text below preserves the history.
 
 ## The finding
 

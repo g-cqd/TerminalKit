@@ -104,6 +104,12 @@ let package = Package(
             swiftSettings: strictSettings
         ),
         .testTarget(
+            name: "TerminalKitCodecsTests",
+            dependencies: ["TerminalKitCodecs"],
+            path: "Tests/TerminalKitCodecsTests",
+            swiftSettings: strictSettings
+        ),
+        .testTarget(
             name: "TerminalKitTestSupportTests",
             dependencies: ["TerminalKitTestSupport"],
             path: "Tests/TerminalKitTestSupportTests",
