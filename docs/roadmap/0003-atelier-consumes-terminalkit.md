@@ -50,8 +50,14 @@ removed because their rewritten assertions were tautological; app integration co
 Final native release suites with explicit testability: KittyCode 966 tests (seven executables),
 AtelierCore 1,628 (22 executables), GitDiffViewer 1,161; all exit 0. Strict formatting and lint pass.
 This is source-breaking for external callers using old product/module names. No universal absence
-of external consumers is claimed. `ask` and Atelier still pin `7a1f22a`; advancing to allocation
-changes requires coordinating their Aemi and AemiJSON revision requirements.
+of external consumers is claimed.
+
+## Decoder fix adopted
+
+Atelier PR #6, merged as `2535e73`, pins TerminalKit `264f744` (as `ask` does), Aemi `5f0c47c` and
+AemiJSON `a6c2d58`. The runtime adapts to the throwing, one-owner `SignalHandler` behind an injected
+signal session (Atelier ADR-0003). KittyCode 968 and GitDiffViewer 1,161 tests exit 0; AtelierCore's
+1,628 include one contaminated lexer allocation case that passes in isolation (Atelier roadmap 0003).
 
 ## Historical scope estimates — recheck before migration
 
