@@ -255,13 +255,17 @@ public struct KeyboardDecoder: Sendable {
 
     private mutating func reset() {
         state = .ground
-        buffer.removeAll()
+        // `keepingCapacity: true` on every buffer here. `removeAll()` releases the storage, so the
+        // next `append` reallocates: measured at one heap allocation per keystroke, on the path that
+        // must answer before the user sees anything. The capacity is tiny and the decoder is
+        // long-lived, so holding it costs nothing and saves an allocation per byte.
+        buffer.removeAll(keepingCapacity: true)
         keyCodeValue = 0
-        alternateKeys.removeAll()
+        alternateKeys.removeAll(keepingCapacity: true)
         currentAlternate = 0
         modifierValue = 0
         eventTypeValue = 0
-        textCodepoints.removeAll()
+        textCodepoints.removeAll(keepingCapacity: true)
         currentTextCP = 0
         hasModifiers = false
         hasEventType = false
