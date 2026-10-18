@@ -1,5 +1,6 @@
 ---
 status: accepted
+partially-corrected-by: ADR-0011
 date: 2026-10-18
 ---
 
@@ -35,12 +36,10 @@ in Atelier — they have to move to this package, where `@testable` works. That 
 substantially larger than "delete six directories", and it is the reason a half-done switchover would
 have been worthless.
 
-**2. The library emits no metadata for its public generics.** `TerminalKitCodecs.o` contains **zero**
-nominal type descriptors for `DecoderResult`. A test target linking the product fails to link. The
-documented remedy, `-emit-generic-metadata`, **does not exist in Swift 6.4** (verified:
-`swiftc -frontend -help` lists only `-prespecialize-generic-metadata` and
-`-disable-generic-metadata-prespecialization`). A minimal reproduction did not reproduce it, so the
-cause is still unknown.
+**2. ~~The library emits no metadata for its public generics.~~ RETRACTED — see
+[ADR-0011](0011-blocker-2-was-not-metadata.md).** The claim below was based on a grep that could not
+have found anything, because `nm` prints mangled names. The descriptor is present and exported. The
+real blocker is an unexplained testability inconsistency, still unsolved.
 
 ## What did work, and is worth keeping
 

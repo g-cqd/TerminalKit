@@ -23,9 +23,7 @@ let strictSettings: [SwiftSetting] = [
     .enableUpcomingFeature("InferIsolatedConformances"),
     .enableUpcomingFeature("InternalImportsByDefault"),
     .enableUpcomingFeature("MemberImportVisibility"),
-    .treatAllWarnings(as: .error),
-    .unsafeFlags(["-Xfrontend", "-warn-long-function-bodies=100"]),
-    .unsafeFlags(["-Xfrontend", "-warn-long-expression-type-checking=500"])
+    .treatAllWarnings(as: .error)
 ]
 
 let package = Package(
@@ -101,11 +99,7 @@ let package = Package(
             swiftSettings: strictSettings),
         .testTarget(
             name: "TerminalKitCoreTests",
-            dependencies: [
-                "TerminalKitCore",
-                "TerminalKitTestSupport",
-                .product(name: "AemiKernel", package: "aemi")
-            ],
+            dependencies: ["TerminalKitCore", "TerminalKitTestSupport"],
             path: "Tests/TerminalKitCoreTests",
             swiftSettings: strictSettings
         ),
