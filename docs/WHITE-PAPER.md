@@ -77,6 +77,15 @@ is better without it.
 
 **Banned:** `-Ounchecked`. It strips the bounds and overflow checks `StrictMemorySafety` relies on.
 
+## 4b. Style and size
+
+- **Style is Aemi's canonical configuration**, copied by `Aemi/scripts/sync-config.sh`, not re-derived
+  per package. ADR-0003.
+- **swift-format owns style; SwiftLint owns size and complexity.** The synced `.swiftlint.yml` uses
+  `only_rules`, so the two tools structurally cannot argue.
+- `Scripts/quality.sh` is the only entry point; `--check` is what CI runs. Format drift is a red build.
+- Build and test in **release**, always.
+
 ## 5. Documentation law
 
 - `docs/adr/NNNN-title.md` — **one decision per file**. A decision changed by evidence is a **new ADR
@@ -118,6 +127,8 @@ Every entry is a claim, the probe that tested it, and the verdict. It only grows
 | 10 | DECSTR resets DEC private modes | Same DECRQM probe, tier 2, four emulators | **REFUTED — by the emulators, against us.** DECSTR left `?1049`, the mouse modes and `?2004` set on kitty, ghostty and wezterm. The oracle and the docs were wrong. ADR-0002. |
 | 11 | The selective tier clears the private modes it names | Same probe, tier 1 | **CONFIRMED.** PASS on all three emulators that report mode state. This is the tier that does the work. |
 | 12 | Mode 25 behaves like the other private modes | DECRQM on `?25` | **REFUTED, twice.** `1` means *visible*. It made the oracle report a healthy terminal as broken, then made the first verifier do the same. Inverted handling is now explicit in both. |
+| 13 | This package needed its own style rules | Read Aemi's `.swift-format` / `.swiftlint.yml`, and its `sync-config.sh` | **REFUTED.** A canonical configuration already exists, with a documented rationale and a supported propagation script. Adopted rather than reinvented. ADR-0003. |
+| 14 | The new quality gate can fail | Injected 2-space indentation and an over-long line, ran `Scripts/quality.sh --check`, restored | **CONFIRMED.** `[Indentation] error`, `[FAIL] formatting drift`, exit 1; clean afterwards. A gate that cannot fail proves nothing. |
 
 **Open questions — not probed, therefore not acted on:**
 
