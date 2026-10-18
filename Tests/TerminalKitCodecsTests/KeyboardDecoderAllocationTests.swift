@@ -1,31 +1,30 @@
 internal import AemiTestKit
-import Foundation
 internal import TerminalKitCodecs
 import Testing
+
+/// The ceiling describes the optimized decoder; an unoptimized build allocates where release does not.
+private let isDebugBuild: Bool = {
+    #if DEBUG
+        true
+    #else
+        false
+    #endif
+}()
 
 /// The decoder is on the input hot path: one call per keystroke byte, on the thread that must
 /// respond before the user sees anything. An allocation here is an allocation per keystroke, so the
 /// budget is not "a few" but zero.
 ///
-/// ## Why this test is opt-in
-///
-/// Aemi's counter observes the thread that opened the window, but a thread that *starts* inside it
-/// can still contribute. Measured: in isolation this test observes 0 allocations, and inside the
-/// full suite — where other suites run in parallel — it observes about 101 per 1,000 keystrokes, all
-/// of them other tests' allocations. A ceiling judged against that number would be a ceiling on the
-/// test runner, not on the decoder.
-///
-/// So the measurement only means something in a quiet process. This test is therefore opt-in through
-/// `TERMINALKIT_ALLOC=1`, and CI runs it in a job of its own so nothing else is in that process.
-/// The alternative — a limit generous enough to absorb the noise — would not catch the regression
-/// this test exists to catch.
+/// Aemi's counter counts only the measuring thread (Aemi ADR-0010). Before that, other suites'
+/// threads leaked into the window: this measurement read about 101 per 1,000 keystrokes in the full
+/// suite and 0 alone, so it ran opt-in, in a CI job of its own. It now runs in every release suite.
 ///
 /// Missing instrumentation fails the test rather than passing it: `try #require` throws when the
 /// counter is unavailable, so an unmeasurable platform is a red build, never a green one.
 @Suite("The decoder's hot path does not allocate", .serialized)
 struct KeyboardDecoderAllocationTests {
     /// A keystroke is one byte fed to a decoder in its ground state.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TERMINALKIT_ALLOC"] == "1"))
+    @Test(.disabled(if: isDebugBuild, "the ceiling describes the optimized decoder"))
     func `decoding plain keystrokes does not allocate`() throws {
         var decoder = KeyboardDecoder()
         // Warm up so one-time lazy initialisation is not counted as the hot path's cost.
@@ -39,7 +38,7 @@ struct KeyboardDecoderAllocationTests {
     }
 
     /// The control: the instrument must SEE an allocation, or every ceiling here is decorative.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TERMINALKIT_ALLOC"] == "1"))
+    @Test(.disabled(if: isDebugBuild, "the ceiling describes the optimized decoder"))
     func `the instrument detects an allocation in the same configuration`() throws {
         var ballast: [String] = []
         for _ in 0 ..< 100 { ballast.append(String(repeating: "x", count: 64)) }
