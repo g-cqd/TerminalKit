@@ -39,6 +39,29 @@ public protocol TerminalConnection: Sendable {
     /// - Returns: A `TerminalSize` value describing the terminal's column and row counts.
     /// - Throws: `TerminalError.failedToGetSize` if the size cannot be determined.
     func getSize() throws(TerminalError) -> TerminalSize
+
+    /// Bytes that arrive before `deadline`, without blocking past it.
+    ///
+    /// Added for ``TerminalProbe``, which must ask the terminal a question and wait for the answer
+    /// without spinning and without occupying a thread. `poll` is the primitive for exactly that.
+    ///
+    /// - Returns: 0 when `deadline` passes with nothing to read, or nil when this connection cannot
+    ///   answer with a deadline at all. **nil means "unknown", not "nothing there"** — a probe that
+    ///   cannot tell must report the capability as unanswered rather than as unsupported.
+    func readAvailable(until deadline: ContinuousClock.Instant, into buffer: UnsafeMutableRawBufferPointer)
+        throws(TerminalError) -> Int?
+}
+
+extension TerminalConnection {
+    /// The default is *unknown*: a connection with no descriptor cannot say when bytes will arrive.
+    ///
+    /// Returning nil rather than 0 matters — a probe that treats this as "no reply yet" would wait out
+    /// its whole deadline on every query, and one that treats it as 0 would report every capability as
+    /// unsupported. Neither is right, so the answer is that the question cannot be answered.
+    public func readAvailable(
+        until deadline: ContinuousClock.Instant,
+        into buffer: UnsafeMutableRawBufferPointer
+    ) throws(TerminalError) -> Int? { nil }
 }
 
 extension TerminalConnection {
