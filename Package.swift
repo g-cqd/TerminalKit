@@ -25,7 +25,7 @@ let strictSettings: [SwiftSetting] = [
     .enableUpcomingFeature("MemberImportVisibility"),
     .treatAllWarnings(as: .error),
     .unsafeFlags(["-Xfrontend", "-warn-long-function-bodies=100"]),
-    .unsafeFlags(["-Xfrontend", "-warn-long-expression-type-checking=500"]),
+    .unsafeFlags(["-Xfrontend", "-warn-long-expression-type-checking=500"])
 ]
 
 let package = Package(
@@ -36,15 +36,32 @@ let package = Package(
         .library(name: "TerminalKitCore", targets: ["TerminalKitCore"]),
         // The oracle terminal model, so a consumer can test its own terminal layer the same way.
         .library(name: "TerminalKitTestSupport", targets: ["TerminalKitTestSupport"]),
+        .library(name: "TerminalKitIO", targets: ["TerminalKitIO"]),
+        .library(name: "TerminalKitText", targets: ["TerminalKitText"]),
+        .library(name: "TerminalKitStyle", targets: ["TerminalKitStyle"]),
         // Umbrella — re-exports the core. Test support stays out, so shipping code never links the
         // oracle by accident.
-        .library(name: "TerminalKit", targets: ["TerminalKit"]),
+        .library(name: "TerminalKit", targets: ["TerminalKit"])
     ],
     targets: [
         .target(name: "TerminalKitCore", path: "Sources/TerminalKitCore", swiftSettings: strictSettings),
         .target(
             name: "TerminalKitTestSupport",
             path: "Sources/TerminalKitTestSupport",
+            swiftSettings: strictSettings),
+        // Extracted from Atelier's Apps/KittyCode and Packages/AtelierCore. These three had no
+        // sibling-module dependencies at all, which is what made them safe to move first.
+        .target(
+            name: "TerminalKitStyle",
+            path: "Sources/TerminalKitStyle",
+            swiftSettings: strictSettings),
+        .target(
+            name: "TerminalKitIO",
+            path: "Sources/TerminalKitIO",
+            swiftSettings: strictSettings),
+        .target(
+            name: "TerminalKitText",
+            path: "Sources/TerminalKitText",
             swiftSettings: strictSettings),
         .target(
             name: "TerminalKit",
@@ -55,6 +72,6 @@ let package = Package(
             name: "TerminalKitCoreTests",
             dependencies: ["TerminalKitCore", "TerminalKitTestSupport"],
             path: "Tests/TerminalKitCoreTests",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings)
     ]
 )
