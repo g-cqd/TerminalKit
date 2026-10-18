@@ -117,7 +117,10 @@ let package = Package(
         ),
         .testTarget(
             name: "TerminalKitInputTests",
-            dependencies: ["TerminalKitInput", "TerminalKitCodecs", "TerminalKitIO"],
+            dependencies: [
+                "TerminalKitInput", "TerminalKitCodecs", "TerminalKitIO",
+                .product(name: "AemiTestKit", package: "aemi")
+            ],
             path: "Tests/TerminalKitInputTests",
             swiftSettings: strictSettings
         ),
