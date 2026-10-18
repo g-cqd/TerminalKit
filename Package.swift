@@ -110,6 +110,33 @@ let package = Package(
             swiftSettings: strictSettings
         ),
         .testTarget(
+            name: "TerminalKitIOTests",
+            dependencies: ["TerminalKitIO"],
+            path: "Tests/TerminalKitIOTests",
+            swiftSettings: strictSettings
+        ),
+        .testTarget(
+            name: "TerminalKitInputTests",
+            dependencies: ["TerminalKitInput", "TerminalKitCodecs", "TerminalKitIO"],
+            path: "Tests/TerminalKitInputTests",
+            swiftSettings: strictSettings
+        ),
+        .testTarget(
+            name: "TerminalKitRenderTests",
+            dependencies: [
+                "TerminalKitRender", "TerminalKitCodecs", "TerminalKitIO", "TerminalKitStyle",
+                "TerminalKitText", .product(name: "AemiTestKit", package: "aemi")
+            ],
+            path: "Tests/TerminalKitRenderTests",
+            swiftSettings: strictSettings
+        ),
+        .testTarget(
+            name: "TerminalKitTextTests",
+            dependencies: ["TerminalKitText"],
+            path: "Tests/TerminalKitTextTests",
+            swiftSettings: strictSettings
+        ),
+        .testTarget(
             name: "TerminalKitTestSupportTests",
             dependencies: ["TerminalKitTestSupport"],
             path: "Tests/TerminalKitTestSupportTests",

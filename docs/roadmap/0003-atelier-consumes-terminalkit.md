@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by:
 date: 2026-10-18
 ---
@@ -16,12 +16,22 @@ ADR-0012 and entry 0005 establish the missing setting:
 with `@testable import`. The previous metadata and `unsafeFlags` diagnoses are retracted.
 Do not add metadata flags, resilience settings or public access to work around the old error.
 
-## Next steps
+## Owning-suite verification complete
 
-1. Import the four terminal suites and AtelierText's suite, declaring each imported target in
-   the test target's dependencies. Preserve assertions while adapting imports and type renames.
-2. Run optimized tests with explicit testability. Prefer owning-module tests for internals;
-   cross-package testability must be probed, not assumed impossible.
+Imported 56 existing test files from Atelier at `ba01419`: four terminal suites and AtelierText's
+suite. Changed module imports, the two renamed symbols and generic test-support filenames only;
+assertions remain intact. The boundary regression has its own filename to avoid a suite collision.
+
+`swift test -c release --enable-testable-imports` exits 0. Seven targets report
+153 + 2 + 74 + 35 + 17 + 26 + 61 = 368 tests. Opt-in performance benchmarks are skipped unless
+explicitly requested. This does not constitute a new benchmark result.
+
+## Remaining steps
+
+1. Keep the owning tests with TerminalKit. Their migrated copies are verified; Atelier's originals
+   remain until its consumers switch successfully.
+2. Prefer owning-module tests for internals; cross-package testability must be probed, not assumed
+   impossible.
 3. Replace Atelier's implementation directories with re-export shims, preserving module names
    and public APIs. The prior consumer-build experiment succeeded with this shape.
 4. Apply `KittyLogger` → `TerminalLogger` and `KittySequences` → `EscapeSequences` to consumers.
