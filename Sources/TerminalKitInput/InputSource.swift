@@ -8,7 +8,17 @@ public final class InputSource: Sendable {
     static let readSize = 4096
 
     private let connection: any TerminalConnection
-    private let escapeIsUnambiguous: Bool
+    /// Shared with the read loop, which captures it rather than `self`.
+    private let unambiguousEscape: AtomicFlag
+
+    /// Whether the terminal sends the Escape key as `CSI 27 u` (``TerminalSession/escapeIsUnambiguous``).
+    /// Then a lone `ESC` at the end of a read is the start of a sequence split across reads, and waits for its
+    /// rest; otherwise it is read as the Escape key, the only reading available to a legacy terminal. It may
+    /// change while reading, when a probe reply arrives; each read uses the value it finds.
+    public var escapeIsUnambiguous: Bool {
+        get { unambiguousEscape.value }
+        set { unambiguousEscape.value = newValue }
+    }
     private let _events: AsyncStream<InputEvent>
     private let continuation: AsyncStream<InputEvent>.Continuation
 
@@ -16,13 +26,10 @@ public final class InputSource: Sendable {
 
     /// - Parameters:
     ///   - connection: the terminal to read.
-    ///   - escapeIsUnambiguous: whether the terminal sends the Escape key as `CSI 27 u`
-    ///     (``TerminalSession/escapeIsUnambiguous``). Then a lone `ESC` at the end of a read is the start of a
-    ///     sequence split across reads, and waits for its rest. Otherwise it is read as the Escape key, the
-    ///     only reading available to a legacy terminal.
+    ///   - escapeIsUnambiguous: the initial ``escapeIsUnambiguous``.
     public init(connection: any TerminalConnection, escapeIsUnambiguous: Bool = false) {
         self.connection = connection
-        self.escapeIsUnambiguous = escapeIsUnambiguous
+        self.unambiguousEscape = AtomicFlag(escapeIsUnambiguous)
         // Unbounded: every keystroke must arrive in order, even from a fast paste under load.
         let (stream, cont) = AsyncStream<InputEvent>
             .makeStream(
@@ -36,7 +43,7 @@ public final class InputSource: Sendable {
     /// returns.
     @discardableResult
     public func start() -> Task<Void, Never> {
-        let task = Task { [connection, continuation, escapeIsUnambiguous] in
+        let task = Task { [connection, continuation, unambiguousEscape] in
             var router = SequenceRouter()
             var routedEvents: [InputEvent] = []
             let buffer = UnsafeMutableRawBufferPointer.allocate(byteCount: Self.readSize, alignment: 1)
@@ -54,7 +61,7 @@ public final class InputSource: Sendable {
                     router.feedAll(span, into: &routedEvents)
                     // A full read may have cut a sequence short; any other ends where the terminal's writes did,
                     // unless Escape is unambiguous, when a trailing ESC can only begin a sequence.
-                    if count < Self.readSize, !escapeIsUnambiguous {
+                    if count < Self.readSize, !unambiguousEscape.value {
                         router.flushPendingEscape(into: &routedEvents)
                     }
                     for event in routedEvents {
