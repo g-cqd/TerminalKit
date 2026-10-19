@@ -94,7 +94,16 @@ jobs:
           fi
       - name: Compare against the base
         if: steps.base.outputs.sha != ''
-        run: Scripts/benchmarks.sh compare "${{ steps.base.outputs.sha }}"
+        # A regression has to reproduce. The 25th-percentile gate reads a sub-microsecond benchmark in
+        # 41.67 ns clock ticks, so 417 ns against 500 ns is ten ticks against twelve: +19 % against a 15 %
+        # threshold, from one tick of noise, on a pull request that changed no source. Two comparisons
+        # that both exceed the thresholds are a regression; one is noise.
+        run: |
+          for attempt in 1 2; do
+            if Scripts/benchmarks.sh compare "${{ steps.base.outputs.sha }}"; then exit 0; fi
+            echo "::warning::attempt $attempt exceeded the thresholds; a regression must reproduce"
+          done
+          exit 1
       - name: Save the benchmark build
         if: ${{ always() && github.ref == 'refs/heads/main' && steps.bench-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
