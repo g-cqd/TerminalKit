@@ -40,6 +40,9 @@ public protocol TerminalConnection: Sendable {
     /// - Throws: `TerminalError.failedToGetSize` if the size cannot be determined.
     func getSize() throws(TerminalError) -> TerminalSize
 
+    /// A descriptor that `poll` reports readable when ``read(into:)`` has input, or nil when there is none.
+    var pollableFileDescriptor: Int32? { get }
+
     /// Bytes that arrive before `deadline`, without blocking past it.
     ///
     /// Added for ``TerminalProbe``, which must ask the terminal a question and wait for the answer
@@ -50,6 +53,12 @@ public protocol TerminalConnection: Sendable {
     ///   cannot tell must report the capability as unanswered rather than as unsupported.
     func readAvailable(until deadline: ContinuousClock.Instant, into buffer: UnsafeMutableRawBufferPointer)
         throws(TerminalError) -> Int?
+}
+
+extension TerminalConnection {
+    /// A descriptor that `poll` reports readable when ``read(into:)`` has input, or nil when the connection has
+    /// none. An input loop waits on it together with a wake-up, so it can be stopped while nothing arrives.
+    public var pollableFileDescriptor: Int32? { nil }
 }
 
 extension TerminalConnection {
