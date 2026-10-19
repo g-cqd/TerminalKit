@@ -19,5 +19,6 @@ let benchmarks: @Sendable () -> Void = {
     for size in ScreenSize.all {
         registerWriteBenchmarks(size)
         registerFlushBenchmarks(size)
+        registerStreamBenchmarks(size)
     }
 }

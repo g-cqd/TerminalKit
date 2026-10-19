@@ -50,8 +50,16 @@ case "${1:-}" in
         rsync -a --exclude .build --exclude .benchmarkBaselines "$bench/" "$scratch/base/Benchmarks/"
 
         printf '==> benchmarks at %s\n' "$base"
-        (cd "$scratch/base/Benchmarks" \
-            && swift package --allow-writing-to-package-directory benchmark baseline update base --no-progress --quiet)
+        if ! (cd "$scratch/base/Benchmarks" \
+            && swift package --allow-writing-to-package-directory benchmark baseline update base --no-progress --quiet); then
+            # This tree's benchmarks use an API the base lacks (a change that adds one, with its benchmark).
+            # Fall back to the base's own benchmarks: the suites both trees have are still compared.
+            printf '==> this tree'"'"'s benchmarks do not build at %s; using its own\n' "$base"
+            rm -rf "$scratch/base/Benchmarks"
+            git -C "$scratch/base" checkout -q -- Benchmarks 2>/dev/null || { echo "[FAIL] no benchmarks at $base" >&2; exit 1; }
+            (cd "$scratch/base/Benchmarks" \
+                && swift package --allow-writing-to-package-directory benchmark baseline update base --no-progress --quiet)
+        fi
         printf '==> benchmarks of this tree\n'
         (cd "$bench" \
             && swift package --allow-writing-to-package-directory benchmark baseline update head --no-progress --quiet)
