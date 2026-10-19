@@ -23,13 +23,13 @@ public enum DiffRenderer: Sendable {
     ) {
         var lastRow = -1
         var lastCol = -1
-        var lastStyle = Style.default
+        var lastStyle = StyleState()
 
         back.dirty.forEachDirtyRange(columns: back.columns) { row, colStart, colEnd in
             var runStart: Int?
 
             for col in colStart ..< colEnd {
-                if front[row, col] == back[row, col] {
+                if front.packed[row &* back.columns &+ col] == back.packed[row &* back.columns &+ col] {
                     if let start = runStart {
                         emitChangedRun(
                             front: front,
@@ -68,7 +68,7 @@ public enum DiffRenderer: Sendable {
         }
 
         // Reset style at end
-        if lastStyle != .default {
+        if lastStyle.style != .default {
             SGREncoder.appendReset(to: &bytes)
         }
     }
@@ -88,32 +88,39 @@ public enum DiffRenderer: Sendable {
 
     /// Renders the entire buffer into a caller-provided buffer.
     public static func renderFull(_ buffer: ScreenBuffer, into bytes: inout ContiguousArray<UInt8>) {
-        var lastStyle = Style.default
+        var lastStyle = StyleState()
 
         for row in 0 ..< buffer.rows {
             EscapeSequences.appendMoveCursor(row: row + 1, col: 1, to: &bytes)
+            let base = row &* buffer.columns
             for col in 0 ..< buffer.columns {
-                let cell = buffer[row, col]
+                let cell = buffer.packed[base &+ col]
 
                 // Skip continuation cells
                 if cell.isContinuation { continue }
 
-                SGREncoder.encodeDiff(from: lastStyle, to: cell.style, into: &bytes)
-                lastStyle = cell.style
-
-                appendUTF8(cell.character, to: &bytes)
+                lastStyle.move(to: cell.styleID, into: &bytes)
+                cell.appendUTF8(to: &bytes)
             }
         }
 
-        if lastStyle != .default {
+        if lastStyle.style != .default {
             SGREncoder.appendReset(to: &bytes)
         }
     }
 
-    @inline(__always)
-    private static func appendUTF8(_ char: Character, to bytes: inout ContiguousArray<UInt8>) {
-        for byte in char.utf8 {
-            bytes.append(byte)
+    /// The style the terminal is in, by id, so the diff resolves a style only where it changes.
+    private struct StyleState {
+        var id: UInt32 = 0
+        var style = Style.default
+
+        @inline(__always)
+        mutating func move(to newID: UInt32, into bytes: inout ContiguousArray<UInt8>) {
+            guard newID != id else { return }
+            let newStyle = StyleTable.style(newID)
+            SGREncoder.encodeDiff(from: style, to: newStyle, into: &bytes)
+            id = newID
+            style = newStyle
         }
     }
 
@@ -125,16 +132,17 @@ public enum DiffRenderer: Sendable {
         colEnd: Int,
         lastRow: inout Int,
         lastCol: inout Int,
-        lastStyle: inout Style,
+        lastStyle: inout StyleState,
         into bytes: inout ContiguousArray<UInt8>
     ) {
         guard colStart < colEnd else { return }
 
         var emittedAnyCell = false
 
+        let base = row &* back.columns
         for col in colStart ..< colEnd {
-            let cell = back[row, col]
-            guard front[row, col] != cell else { continue }
+            let cell = back.packed[base &+ col]
+            guard front.packed[base &+ col] != cell else { continue }
             guard !cell.isContinuation else { continue }
 
             if !emittedAnyCell {
@@ -148,9 +156,8 @@ public enum DiffRenderer: Sendable {
                 emittedAnyCell = true
             }
 
-            SGREncoder.encodeDiff(from: lastStyle, to: cell.style, into: &bytes)
-            lastStyle = cell.style
-            appendUTF8(cell.character, to: &bytes)
+            lastStyle.move(to: cell.styleID, into: &bytes)
+            cell.appendUTF8(to: &bytes)
         }
 
         guard emittedAnyCell else { return }

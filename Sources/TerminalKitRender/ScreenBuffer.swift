@@ -8,8 +8,16 @@ import TerminalKitText
 /// ``write(_:row:col:style:)`` store a C0 control, DEL or a C1 control as ``replacement``, so text such as a file
 /// name cannot reach the terminal as a command. A continuation cell keeps its character, which the diff never sends.
 public struct ScreenBuffer: Sendable {
-    /// The flat array of cells stored in row-major order (row * columns + col).
-    public private(set) var cells: ContiguousArray<Cell>
+    /// The cells, 16 bytes each, in row-major order (row * columns + col) (ADR-0021).
+    private(set) var packed: ContiguousArray<PackedCell>
+
+    /// The last style written and its id in ``StyleTable``, so consecutive writes in one style take no lock.
+    private var lastStyle = Style.default
+    private var lastStyleID: UInt32 = 0
+
+    /// Every cell in row-major order, decoded. Builds a new array on each call: for inspection and tests,
+    /// not for a frame's work.
+    public var cells: ContiguousArray<Cell> { ContiguousArray(packed.lazy.map(\.cell)) }
 
     /// The number of columns (horizontal cells) in the buffer.
     public let columns: Int
@@ -32,7 +40,7 @@ public struct ScreenBuffer: Sendable {
         precondition(!overflow, "ScreenBuffer size overflows Int: columns=\(columns), rows=\(rows)")
         self.columns = safeColumns
         self.rows = safeRows
-        self.cells = ContiguousArray<Cell>(repeating: .empty, count: capacity)
+        self.packed = ContiguousArray<PackedCell>(repeating: .empty, count: capacity)
         self.dirty = DirtyTracker(capacity: capacity)
     }
 
@@ -43,21 +51,14 @@ public struct ScreenBuffer: Sendable {
     public subscript(row: Int, col: Int) -> Cell {
         get {
             guard row >= 0, row < rows, col >= 0, col < columns else { return .empty }
-            return cells[row &* columns &+ col]
+            return packed[row &* columns &+ col].cell
         }
         set {
             guard row >= 0, row < rows, col >= 0, col < columns else { return }
             let index = row &* columns &+ col
-            // No stored cell sends a control, so a cell equal to the stored one needs no check.
-            guard cells[index] != newValue else { return }
-            if Self.needsReplacement(newValue) {
-                var shown = newValue
-                shown.character = Self.replacement
-                store(shown, at: index)
-            } else {
-                cells[index] = newValue
-                dirty.mark(index)
-            }
+            var shown = newValue
+            if Self.needsReplacement(newValue) { shown.character = Self.replacement }
+            store(PackedCell(character: shown.character, width: shown.width, styleID: styleID(shown.style)), at: index)
         }
     }
 
@@ -76,6 +77,7 @@ public struct ScreenBuffer: Sendable {
     public mutating func write(_ string: String, row: Int, col: Int, style: Style) {
         guard row >= 0, row < rows, col >= 0 else { return }
         let base = row &* columns
+        let id = styleID(style)
         var c = col
         let text = string.utf8Span
         let bytes = text.span
@@ -87,7 +89,7 @@ public struct ScreenBuffer: Sendable {
             // Printable ASCII followed by ASCII, or by nothing, is a one-column character of its own.
             if byte &- 0x20 < 0x5F, next == bytes.count || bytes[next] < 0x80 {
                 guard c < columns else { return }
-                storeNarrow(Character(Unicode.Scalar(byte)), style: style, at: base, column: c)
+                storeNarrow(.ascii(byte, styleID: id), at: base, column: c)
                 c &+= 1
                 offset = next
                 continue
@@ -102,12 +104,12 @@ public struct ScreenBuffer: Sendable {
             guard w > 0 else { continue }
             if w == 2 {
                 guard c + 1 < columns else { return }
-                store(Cell(character: char, style: style, width: 2), at: base &+ c)
-                store(Cell(character: "\0", style: style, width: 0), at: base &+ c &+ 1)
+                store(PackedCell(character: char, width: 2, styleID: id), at: base &+ c)
+                store(PackedCell(character: "\0", width: 0, styleID: id), at: base &+ c &+ 1)
                 c += 2
             } else {
                 guard c < columns else { return }
-                storeNarrow(char, style: style, at: base, column: c)
+                storeNarrow(PackedCell(character: char, width: 1, styleID: id), at: base, column: c)
                 c += 1
             }
         }
@@ -138,27 +140,36 @@ public struct ScreenBuffer: Sendable {
     /// Stores `cell`, which holds no control character unless it is a continuation, and marks its index dirty when
     /// that changes the cell.
     @inline(__always)
-    private mutating func store(_ cell: Cell, at index: Int) {
-        guard cells[index] != cell else { return }
-        cells[index] = cell
+    private mutating func store(_ cell: PackedCell, at index: Int) {
+        guard packed[index] != cell else { return }
+        packed[index] = cell
         dirty.mark(index)
     }
 
-    /// Stores a one-column `character`, free of controls, at `column` of the row starting at `base`, and clears the
+    /// The id of `style`, from the last write's when it is the same style.
+    @inline(__always)
+    private mutating func styleID(_ style: Style) -> UInt32 {
+        if style == lastStyle { return lastStyleID }
+        lastStyle = style
+        lastStyleID = StyleTable.id(of: style)
+        return lastStyleID
+    }
+
+    /// Stores a one-column `cell`, free of controls, at `column` of the row starting at `base`, and clears the
     /// continuation cell after it, which lost the wide character it belonged to.
     @inline(__always)
-    private mutating func storeNarrow(_ character: Character, style: Style, at base: Int, column: Int) {
-        store(Cell(character: character, style: style, width: 1), at: base &+ column)
+    private mutating func storeNarrow(_ cell: PackedCell, at base: Int, column: Int) {
+        store(cell, at: base &+ column)
         let after = column &+ 1
-        if after < columns, cells[base &+ after].width == 0 {
+        if after < columns, packed[base &+ after].isContinuation {
             store(.empty, at: base &+ after)
         }
     }
 
     /// Replaces every cell in the buffer with `Cell.empty`, marking changed cells dirty.
     public mutating func clear() {
-        for i in cells.indices where cells[i] != .empty {
-            cells[i] = .empty
+        for i in packed.indices where packed[i] != .empty {
+            packed[i] = .empty
             dirty.mark(i)
         }
     }
@@ -176,10 +187,11 @@ public struct ScreenBuffer: Sendable {
     ///   - cell: The cell value to write into every position in the rectangle.
     public mutating func fill(row: Int, col: Int, width: Int, height: Int, cell: Cell) {
         guard row >= 0, row < rows, col >= 0, col < columns, width > 0, height > 0 else { return }
-        var shown = cell
-        if Self.needsReplacement(shown) {
-            shown.character = Self.replacement
+        var cleaned = cell
+        if Self.needsReplacement(cleaned) {
+            cleaned.character = Self.replacement
         }
+        let shown = PackedCell(character: cleaned.character, width: cleaned.width, styleID: styleID(cleaned.style))
         let rowEnd = row + min(height, rows - row)
         let colEnd = col + min(width, columns - col)
         for r in row ..< rowEnd {
@@ -220,7 +232,7 @@ public struct ScreenBuffer: Sendable {
                 let dstBase = row &* columns
                 let srcBase = (row &+ delta) &* columns
                 for col in regionX ..< (regionX + regionWidth) {
-                    cells[dstBase &+ col] = cells[srcBase &+ col]
+                    packed[dstBase &+ col] = packed[srcBase &+ col]
                 }
             }
         } else {
@@ -229,7 +241,7 @@ public struct ScreenBuffer: Sendable {
                 let dstBase = row &* columns
                 let srcBase = (row &- absDelta) &* columns
                 for col in regionX ..< (regionX + regionWidth) {
-                    cells[dstBase &+ col] = cells[srcBase &+ col]
+                    packed[dstBase &+ col] = packed[srcBase &+ col]
                 }
             }
         }
@@ -240,8 +252,8 @@ public struct ScreenBuffer: Sendable {
     /// - Complexity: O(columns × rows) time; O(1) extra space with unique storage, otherwise O(columns × rows).
     mutating func adoptDirtyCells(from source: ScreenBuffer) {
         precondition(columns == source.columns && rows == source.rows, "ScreenBuffer dimensions differ")
-        let sourceCells = source.cells.span
-        var destination = cells.mutableSpan
+        let sourceCells = source.packed.span
+        var destination = packed.mutableSpan
         for index in 0 ..< destination.count where source.dirty.isDirty(index) {
             destination[index] = sourceCells[index]
         }
@@ -252,8 +264,8 @@ public struct ScreenBuffer: Sendable {
     /// - Complexity: O(columns × rows) time; O(1) extra space with unique storage, otherwise O(columns × rows).
     mutating func adoptAllCells(from source: ScreenBuffer) {
         precondition(columns == source.columns && rows == source.rows, "ScreenBuffer dimensions differ")
-        let sourceCells = source.cells.span
-        var destination = cells.mutableSpan
+        let sourceCells = source.packed.span
+        var destination = packed.mutableSpan
         for index in 0 ..< destination.count {
             destination[index] = sourceCells[index]
         }
@@ -272,22 +284,22 @@ public struct ScreenBuffer: Sendable {
         let safeRows = max(0, newRows)
         let (capacity, overflow) = safeCols.multipliedReportingOverflow(by: safeRows)
         precondition(!overflow, "ScreenBuffer resize overflows Int: cols=\(newCols), rows=\(newRows)")
-        var newCells = ContiguousArray<Cell>(repeating: .empty, count: capacity)
+        var newCells = ContiguousArray<PackedCell>(repeating: .empty, count: capacity)
         let copyRows = min(rows, safeRows)
         let copyCols = min(columns, safeCols)
         for r in 0 ..< copyRows {
             for c in 0 ..< copyCols {
-                newCells[r * safeCols + c] = cells[r * columns + c]
+                newCells[r * safeCols + c] = packed[r * columns + c]
             }
         }
         self = ScreenBuffer._fromParts(cells: newCells, columns: safeCols, rows: safeRows)
     }
 
-    private static func _fromParts(cells: ContiguousArray<Cell>, columns: Int, rows: Int)
+    private static func _fromParts(cells: ContiguousArray<PackedCell>, columns: Int, rows: Int)
         -> ScreenBuffer
     {
         var buf = ScreenBuffer(columns: columns, rows: rows)
-        buf.cells = cells
+        buf.packed = cells
         // Mark everything dirty after resize (batch operation, O(words) not O(cells))
         buf.dirty.markAll()
         return buf

@@ -184,7 +184,7 @@ public final class RenderPipeline {
                 let base = row &* cols
                 for col in 0 ..< cols {
                     let idx = base &+ col
-                    if front.cells[idx] != buffer.cells[idx] {
+                    if front.packed[idx] != buffer.packed[idx] {
                         buffer.dirty.mark(idx)
                     }
                 }
