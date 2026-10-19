@@ -46,7 +46,9 @@ struct DiffRendererRegressionTests {
         #expect(output.contains(0x59), "Changed cell 'Y' should be emitted")  // Y
         #expect(output.contains(0x5A), "Changed cell 'Z' should be emitted")  // Z
         #expect(!output.contains(0x41), "Unchanged cell 'A' should NOT be emitted")  // A
-        #expect(!output.contains(0x45), "Unchanged cell 'E' should NOT be emitted")  // E
+        // The unchanged gap "EFG" between Y and Z is three bytes, against six for a cursor move, so it is written
+        // over instead of jumped (roadmap 0011). It was jumped before.
+        #expect(containsSubsequence(Array(output), Array("XYEFGZ".utf8)))
     }
 
     /// Verifies that wide characters within dirty ranges are handled correctly

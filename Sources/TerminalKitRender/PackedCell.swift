@@ -68,6 +68,13 @@ struct PackedCell: Sendable, Equatable, BitwiseCopyable {
     @inline(__always)
     var styleID: UInt32 { UInt32(truncatingIfNeeded: high >> 32) }
 
+    /// The grapheme's UTF-8 length when it is stored inline, or nil for one kept in ``GraphemeTable``.
+    @inline(__always)
+    var inlineLength: Int? {
+        let length = high & 0xFF
+        return length == Self.overflowFlag ? nil : Int(length)
+    }
+
     /// Appends the grapheme's UTF-8 bytes.
     @inline(__always)
     func appendUTF8(to bytes: inout ContiguousArray<UInt8>) {
