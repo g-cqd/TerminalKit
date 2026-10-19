@@ -1,0 +1,124 @@
+name: ci
+
+# One graph instead of two workflows that each built the package: the cheap gate (format, metrics, release
+# tests) runs first; the benchmark comparison, which builds the package twice more, only runs for a tree that
+# passes it. `result` is the one check to require.
+#
+#   gate ──▶ benchmarks ──▶ result
+#
+# Actions are pinned to full commit SHAs, with the version in a comment: a tag is a name someone can move; a
+# SHA is the code that actually ran.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  SWIFT_VERSION: "6.4.1"
+
+jobs:
+  gate:
+    # macos-26 matches the package's declared floor (.macOS(.v26)): testing on the oldest supported system is
+    # the only way to notice that something quietly started using an API newer than the floor it claims.
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # setup-swift v3 installs through swiftly, which resolves any published toolchain; v2's table stops at 6.2.1.
+      - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+      - name: Restore the SwiftPM tree
+        id: spm
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-${{ env.SWIFT_VERSION }}-
+      - name: SwiftLint (metrics)
+        # The runner image already ships SwiftLint; install only when it is missing.
+        run: |
+          command -v swiftlint >/dev/null 2>&1 || brew install swiftlint
+          swiftlint version
+      - name: Quality gate
+        # --check: fail if the tree is not already canonical, so a formatting drift is a red build.
+        run: Scripts/quality.sh --check
+      - name: Save the SwiftPM tree
+        if: ${{ always() && github.ref == 'refs/heads/main' && steps.spm.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+
+  benchmarks:
+    # Roadmap 0006, ADR-0017. Times this commit against its base on the same runner, with the same benchmark
+    # code, and fails on a regression beyond the thresholds in Benchmarks/Sources/BenchmarkSupport. Comparing
+    # two runs on one machine, rather than against numbers recorded elsewhere, is what makes a shared runner
+    # usable at all. It needs the gate so a tree that does not even pass its tests is not timed.
+    needs: gate
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+      - name: Restore the benchmark build
+        id: bench-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: Benchmarks/.build
+          key: bench-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved', 'Benchmarks/Package.swift', 'Benchmarks/Package.resolved') }}
+          restore-keys: bench-${{ runner.os }}-${{ env.SWIFT_VERSION }}-
+      - name: Choose the base
+        id: base
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          base="${PR_BASE:-$PUSH_BEFORE}"
+          if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "sha=$base" >> "$GITHUB_OUTPUT"
+          else
+            echo "No base commit to compare against; skipping."
+          fi
+      - name: Compare against the base
+        if: steps.base.outputs.sha != ''
+        # A regression has to reproduce. The 25th-percentile gate reads a sub-microsecond benchmark in
+        # 41.67 ns clock ticks, so 417 ns against 500 ns is ten ticks against twelve: +19 % against a 15 %
+        # threshold, from one tick of noise, on a pull request that changed no source. Two comparisons
+        # that both exceed the thresholds are a regression; one is noise.
+        run: |
+          for attempt in 1 2; do
+            if Scripts/benchmarks.sh compare "${{ steps.base.outputs.sha }}"; then exit 0; fi
+            echo "::warning::attempt $attempt exceeded the thresholds; a regression must reproduce"
+          done
+          exit 1
+      - name: Save the benchmark build
+        if: ${{ always() && github.ref == 'refs/heads/main' && steps.bench-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: Benchmarks/.build
+          key: bench-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved', 'Benchmarks/Package.swift', 'Benchmarks/Package.resolved') }}
+
+  result:
+    name: ci result
+    needs: [gate, benchmarks]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Every job passed
+        run: |
+          echo '${{ toJSON(needs) }}' > needs.json
+          if grep -E '"result": "(failure|cancelled)"' needs.json; then exit 1; fi
