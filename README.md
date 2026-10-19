@@ -51,6 +51,9 @@ Scripts/benchmarks.sh compare main    # this tree against main, same machine; fa
 Scripts/benchmarks.sh record          # rewrite Benchmarks/REFERENCE.md
 ```
 
+`Scripts/verify-unicode-width.sh` asks four terminals how wide 54 graphemes are and sets the answers beside
+`UnicodeWidth`'s ([ADR-0024](docs/adr/0024-widths-are-table-lookups-and-contested-graphemes-realign-the-cursor.md)).
+
 `Scripts/verify-scroll-region.sh` runs the real pipeline with a scroll region inside kitty, wezterm and
 Terminal.app and reads their screens back ([ADR-0022](docs/adr/0022-scroll-regions-are-detected-not-declared-per-frame.md)).
 
