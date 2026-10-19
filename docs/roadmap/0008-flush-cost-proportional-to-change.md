@@ -12,6 +12,9 @@ A frame changing one cell costs **3 µs at 120×40 and 15 µs at 300×80**. The 
 so something else scales with the screen: dirty-range iteration, adoption into the front buffer, or the
 signposts.
 
+Confirmed by 0006 (`Benchmarks/REFERENCE.md`, a discarding connection): 2.0 µs at 80×24, 3.8 µs at 120×40,
+15.5 µs at 300×80, about 0.6 ns per cell of screen.
+
 ## What lands
 
 - Find the O(screen) part with the 0006 suite and a profile.

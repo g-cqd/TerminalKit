@@ -43,6 +43,14 @@ See [ADR-0012](docs/adr/0012-explicit-release-testability.md) for the controlled
 
 Build shipping binaries and run performance measurements separately without testability.
 
+Time benchmarks live in their own package ([ADR-0017](docs/adr/0017-time-benchmarks-compare-two-runs-on-one-machine.md)):
+
+```sh
+Scripts/benchmarks.sh                 # run every suite
+Scripts/benchmarks.sh compare main    # this tree against main, same machine; fails on a regression
+Scripts/benchmarks.sh record          # rewrite Benchmarks/REFERENCE.md
+```
+
 ## Progress
 
 All six extracted modules compile, and the owning IO/codec/input/renderer/text suites run here.

@@ -29,11 +29,11 @@ need swiftlint "Install with: brew install swiftlint"
 
 if [ "$check_only" -eq 1 ]; then
     printf '==> swift-format (check)\n'
-    "$SF" lint --recursive --configuration .swift-format --strict Sources Tests \
+    "$SF" lint --recursive --configuration .swift-format --strict Sources Tests Benchmarks/Benchmarks Benchmarks/Sources \
         || fail "formatting drift — run Scripts/quality.sh to fix"
 else
     printf '==> swift-format (format)\n'
-    "$SF" format --in-place --recursive --configuration .swift-format Sources Tests
+    "$SF" format --in-place --recursive --configuration .swift-format Sources Tests Benchmarks/Benchmarks Benchmarks/Sources
 fi
 
 printf '==> swiftlint (metrics, --strict)\n'
