@@ -80,3 +80,43 @@ struct InputSourceTests {
         #expect(keyCodes == [UInt32](repeating: 0x61, count: plainKeys.count) + [57352])
     }
 }
+
+@Suite
+struct InputSourceUnambiguousEscapeTests {
+    /// `CSI 27 u`: the Escape key under the kitty keyboard protocol's disambiguate flag.
+    private let escapeKey: [UInt8] = [0x1B, 0x5B, 0x32, 0x37, 0x75]
+
+    private func keyCodes(reads: [[UInt8]], escapeIsUnambiguous: Bool) async -> [UInt32] {
+        let mock = MockTerminalConnection()
+        for read in reads { mock.enqueueRead(read) }
+        let source = InputSource(connection: mock, escapeIsUnambiguous: escapeIsUnambiguous)
+        let task = source.start()
+        defer { task.cancel() }
+        var codes: [UInt32] = []
+        for await event in source.events {
+            if case .key(let key) = event { codes.append(key.keyCode) }
+        }
+        return codes
+    }
+
+    @Test func `with unambiguous Escape, an ESC that ends a read waits for the rest of its sequence`() async {
+        // A terminal's write split after the ESC byte. Read as the Escape key, the rest would arrive as text.
+        let codes = await keyCodes(reads: [[0x1B], Array(escapeKey.dropFirst())], escapeIsUnambiguous: true)
+
+        #expect(codes == [27])
+    }
+
+    @Test func `with legacy keys, the same split still reads the ESC as the Escape key`() async {
+        // The end-of-read heuristic stays the fallback, and this is its known cost.
+        let codes = await keyCodes(reads: [[0x1B], Array(escapeKey.dropFirst())], escapeIsUnambiguous: false)
+
+        #expect(codes.first == 27)
+        #expect(codes.count > 1)
+    }
+
+    @Test func `the disambiguated Escape key decodes as Escape`() async {
+        let codes = await keyCodes(reads: [escapeKey], escapeIsUnambiguous: true)
+
+        #expect(codes == [27])
+    }
+}

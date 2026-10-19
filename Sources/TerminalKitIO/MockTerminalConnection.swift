@@ -32,6 +32,13 @@ public final class MockTerminalConnection: TerminalConnection {
         withStateLock { $0.inputBuffer.append(contentsOf: bytes) }
     }
 
+    /// Enqueues `bytes` as one read of their own, so a test can choose where the terminal's writes end.
+    ///
+    /// - Parameter bytes: The bytes a single `read(into:)` returns.
+    public func enqueueRead(_ bytes: [UInt8]) {
+        withStateLock { $0.queuedReadResults.append(.success(bytes)) }
+    }
+
     /// Enqueues a read error to be returned by the next `read(into:)` call.
     ///
     /// - Parameter error: The error that should be returned on the next read.
