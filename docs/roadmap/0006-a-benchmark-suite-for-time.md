@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: 
 date: 2026-10-19
 ---
@@ -24,3 +24,12 @@ to a *time*, so a change that keeps allocations at zero but doubles a frame's co
 ## Why first
 
 Every other entry below changes a hot path. Each needs a before and an after on the same harness.
+
+## Done (2026-10-19)
+
+- `Benchmarks/` holds every suite above, at all three sizes; ADR-0017 records the design.
+- `Scripts/benchmarks.sh compare <rev>` gates a change against its base on one machine; CI runs it on
+  `main` and on pull requests. Thresholds: 15 % at p25 for time, no growth for allocations.
+- `Benchmarks/REFERENCE.md` holds the reference numbers, from `Scripts/benchmarks.sh record`.
+- Not done as written: the checked-in thresholds are a readable table, not package-benchmark's static
+  thresholds, which gate at p90 only (ADR-0017).
