@@ -39,7 +39,10 @@ case "${1:-}" in
         [ $# -eq 2 ] || { echo "usage: $0 compare <rev>" >&2; exit 2; }
         base=$(git -C "$root" rev-parse --verify "$2^{commit}")
         scratch=$(mktemp -d)
-        trap 'git -C "$root" worktree remove --force "$scratch/base" >/dev/null 2>&1; rm -rf "$scratch"' EXIT
+        cleanup() { git -C "$root" worktree remove --force "$scratch/base" >/dev/null 2>&1; rm -rf "$scratch"; }
+        # Also on a signal: an interrupted run otherwise leaves its worktree registered.
+        trap cleanup EXIT
+        trap 'cleanup; exit 130' INT TERM HUP
         git -C "$root" worktree add --detach "$scratch/base" "$base" >/dev/null
         # The same toolchain for both runs, or the comparison times the compiler: swiftly picks it from
         # .swift-version, which CI's setup step rewrites in the checkout (6.4 became 6.4.1) but not in
