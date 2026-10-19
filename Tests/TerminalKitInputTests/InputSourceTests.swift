@@ -114,6 +114,23 @@ struct InputSourceUnambiguousEscapeTests {
         #expect(codes.count > 1)
     }
 
+    @Test func `Escape can become unambiguous after the source has started`() async {
+        // The session learns the terminal's answer from the input itself, after reading has begun.
+        let mock = MockTerminalConnection()
+        mock.enqueueRead([0x1B])
+        mock.enqueueRead(Array(escapeKey.dropFirst()))
+        let source = InputSource(connection: mock)
+        source.escapeIsUnambiguous = true
+        let task = source.start()
+        defer { task.cancel() }
+        var codes: [UInt32] = []
+        for await event in source.events {
+            if case .key(let key) = event { codes.append(key.keyCode) }
+        }
+
+        #expect(codes == [27])
+    }
+
     @Test func `the disambiguated Escape key decodes as Escape`() async {
         let codes = await keyCodes(reads: [escapeKey], escapeIsUnambiguous: true)
 
