@@ -109,6 +109,36 @@ public enum DiffRenderer: Sendable {
         }
     }
 
+    /// Writes the unchanged cells `start ..< end` of `row` again when that is shorter than moving the cursor
+    /// past them and needs no style change; the cursor then stands at `end`, as a move would have left it.
+    ///
+    /// - Returns: whether the gap was written. If not, nothing was appended.
+    private static func writeGap(
+        _ buffer: ScreenBuffer, row: Int, from start: Int, to end: Int, styleID: UInt32,
+        into bytes: inout ContiguousArray<UInt8>
+    ) -> Bool {
+        // `ESC [ row ; col H`: four bytes and the digits.
+        let moveCost = 4 &+ decimalDigits(row &+ 1) &+ decimalDigits(end &+ 1)
+        guard end &- start <= moveCost else { return false }
+        let base = row &* buffer.columns
+        var length = 0
+        for col in start ..< end {
+            let cell = buffer.packed[base &+ col]
+            // One column, inline, already in the terminal's current style: written as it is, it changes
+            // nothing on screen.
+            guard cell.width == 1, cell.styleID == styleID, let utf8 = cell.inlineLength else { return false }
+            length &+= utf8
+        }
+        guard length <= moveCost else { return false }
+        for col in start ..< end { buffer.packed[base &+ col].appendUTF8(to: &bytes) }
+        return true
+    }
+
+    @inline(__always)
+    private static func decimalDigits(_ value: Int) -> Int {
+        value < 10 ? 1 : value < 100 ? 2 : value < 1_000 ? 3 : value < 10_000 ? 4 : 5
+    }
+
     /// The style the terminal is in, by id, so the diff resolves a style only where it changes.
     private struct StyleState {
         var id: UInt32 = 0
@@ -147,11 +177,16 @@ public enum DiffRenderer: Sendable {
 
             if !emittedAnyCell {
                 if row != lastRow || col != lastCol {
-                    EscapeSequences.appendMoveCursor(
-                        row: row + 1,
-                        col: col + 1,
-                        to: &bytes
-                    )
+                    let bridged =
+                        row == lastRow && col > lastCol
+                        && writeGap(back, row: row, from: lastCol, to: col, styleID: lastStyle.id, into: &bytes)
+                    if !bridged {
+                        EscapeSequences.appendMoveCursor(
+                            row: row + 1,
+                            col: col + 1,
+                            to: &bytes
+                        )
+                    }
                 }
                 emittedAnyCell = true
             }
