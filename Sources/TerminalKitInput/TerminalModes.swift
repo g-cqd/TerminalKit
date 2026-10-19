@@ -46,3 +46,13 @@ public enum KittyKeyboardFlags {
     /// `ESC` byte is then always the start of a sequence, never the Escape key.
     public static let disambiguate: UInt8 = 1
 }
+
+/// What a session knows about the terminal's kitty keyboard protocol when it is created.
+public enum KeyboardProtocolSupport: Sendable, Equatable {
+    /// The terminal answered a keyboard query already; the flags are pushed on entry.
+    case supported
+    /// The terminal does not support it, or the flags are not wanted; nothing is pushed or asked.
+    case unsupported
+    /// Ask on entry, without waiting, and push the flags if the answer says so (``TerminalSession/observe(_:)``).
+    case probe
+}
