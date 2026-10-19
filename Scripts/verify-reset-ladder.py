@@ -24,14 +24,15 @@ out = []
 def say(s): out.append(s)
 
 # Tier 1 — TerminalKitTerminalResetLadder.escapeBytes(for: .selectiveCleanup)
-TIER1 = (b"\x1b[?1049l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l"
-         b"\x1b[?1015l\x1b[?2004l\x1b[m\x1b[?25h")
+TIER1 = (b"\x1b[?2026l\x1b[?1049l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l"
+         b"\x1b[?1015l\x1b[?1004l\x1b[?2004l\x1b[m\x1b[?25h")
 DECSTR = b"\x1b[!p"     # tier 2
 RIS    = b"\x1b c".replace(b" ", b"")   # tier 3 — ESC c
 
 MODES = [(1049, "alternate screen"), (1000, "mouse click"), (1002, "mouse drag"),
          (1003, "mouse motion"), (1006, "SGR mouse"), (1015, "urxvt mouse"),
-         (2004, "bracketed paste"), (25, "cursor")]
+         (1004, "focus events"), (2004, "bracketed paste"), (2026, "synchronized output"),
+         (25, "cursor")]
 
 def read_reply(fd, seconds=0.6):
     """Read whatever the terminal sends back within a short window."""
@@ -88,7 +89,7 @@ def dsr_cursor(fd, seconds=0.6):
 
 
 def make_messy(fd):
-    for m in (1049, 1000, 1002, 1003, 1006, 1015, 2004):
+    for m in (1049, 1000, 1002, 1003, 1004, 1006, 1015, 2004, 2026):
         os.write(fd, b"\x1b[?%dh" % m)
     os.write(fd, b"\x1b[?25l")          # hide cursor
     os.write(fd, b"\x1b[1;31m")         # SGR on
@@ -138,6 +139,24 @@ try:
     make_messy(fd); time.sleep(0.2)
     os.write(fd, DECSTR); time.sleep(0.3)
     after2 = show(fd, "AFTER TIER 2 — DECSTR (ESC [ ! p)")
+
+    # Synchronized output ends by itself: terminals time an open update out, so by the time the
+    # mode table above reaches ?2026 it reads reset whether or not tier 1 ended it. Ask straight
+    # away instead, once without the tier as a control and once with it.
+    say("")
+    say("SYNCHRONIZED OUTPUT — queried immediately, before any timeout")
+    os.write(fd, b"\x1b[?2026h")
+    sync_control = decrqm(fd, 2026)
+    os.write(fd, b"\x1b[?2026h" + TIER1)
+    sync_after = decrqm(fd, 2026)
+    say("  ?2026 right after setting it:        %s (1 = set: the control)" % sync_control)
+    say("  ?2026 right after setting it + tier 1: %s (2 = reset)" % sync_after)
+    if sync_control != 1:
+        say("  synchronized output: INCONCLUSIVE — the control did not read set")
+    elif sync_after == 2:
+        say("  synchronized output: PASS — tier 1 ends an open update")
+    else:
+        say("  synchronized output: FAIL — still %s after tier 1" % sync_after)
 
     # Verdict: after tier 1 and after tier 2 nothing should still be set.
     say("")

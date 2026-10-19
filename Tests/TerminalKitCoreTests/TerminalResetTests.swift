@@ -10,6 +10,15 @@ import Testing
 /// is a device that reads bytes in sequence.
 @Suite("The terminal reset ladder")
 struct TerminalResetTests {
+    /// `ESC [ ? 2026 l` — end synchronized output, so a program that died mid-frame does not leave the
+    /// terminal holding everything after it.
+    private static let endSynchronizedOutput: [UInt8] = [
+        0x1B, 0x5B, 0x3F, 0x32, 0x30, 0x32, 0x36, 0x6C
+    ]
+    /// `ESC [ ? 1004 l` — focus reporting off, or the shell receives `ESC [ I` and `ESC [ O` as input.
+    private static let disableFocusEvents: [UInt8] = [
+        0x1B, 0x5B, 0x3F, 0x31, 0x30, 0x30, 0x34, 0x6C
+    ]
     /// `ESC [ ? 1049 l` — leave the alternate screen.
     private static let leaveAlternateScreen: [UInt8] = [
         0x1B, 0x5B, 0x3F, 0x31, 0x30, 0x34, 0x39, 0x6C
@@ -35,8 +44,17 @@ struct TerminalResetTests {
         let bytes = TerminalResetLadder.escapeBytes(for: .selectiveCleanup)
 
         #expect(
-            bytes == Self.leaveAlternateScreen + Self.disableMouse + Self.disableBracketedPaste
-                + Self.defaultGraphicRendition + Self.showCursor)
+            bytes == Self.endSynchronizedOutput + Self.leaveAlternateScreen + Self.disableMouse
+                + Self.disableFocusEvents + Self.disableBracketedPaste + Self.defaultGraphicRendition
+                + Self.showCursor)
+    }
+
+    @Test func `the selective tier ends synchronized output before anything else`() {
+        // A terminal inside a synchronized update holds what follows until the update ends, so the
+        // cleanup only shows once this has been read.
+        let bytes = TerminalResetLadder.escapeBytes(for: .selectiveCleanup)
+
+        #expect(bytes.starts(with: Self.endSynchronizedOutput))
     }
 
     @Test func `the selective tier leaves the cursor visible and the colours default`() {

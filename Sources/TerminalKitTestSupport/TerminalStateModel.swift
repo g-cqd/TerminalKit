@@ -20,6 +20,8 @@ public struct TerminalStateModel: Sendable {
     public static let alternateScreenMode = 1049
     /// The private mode number that switches bracketed paste.
     public static let bracketedPasteMode = 2004
+    /// The private mode number that holds rendering until a frame ends.
+    public static let synchronizedOutputMode = 2026
     /// The private mode number that hides the cursor.
     public static let cursorHiddenMode = 25
 
@@ -57,11 +59,13 @@ public struct TerminalStateModel: Sendable {
     public init() {}
 
     /// Puts the model into the state a full-screen program leaves behind when it is killed without
-    /// cleaning up: alternate screen on, mouse and paste on, cursor hidden, colours set, and output
+    /// cleaning up: alternate screen on, mouse, focus and paste on, inside a synchronized update, cursor
+    /// hidden, colours set, and output
     /// the user may still want to read back.
     public mutating func applyFullScreenSession() {
         enabledPrivateModes = [
-            Self.alternateScreenMode, 1000, 1002, 1003, 1006, 1015, Self.bracketedPasteMode
+            Self.alternateScreenMode, 1000, 1002, 1003, 1004, 1006, 1015, Self.bracketedPasteMode,
+            Self.synchronizedOutputMode
         ]
         isCursorVisible = false
         activeGraphicRenditions = [1, 31, 44]
