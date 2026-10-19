@@ -1,4 +1,6 @@
 import Darwin
+import Foundation
+import Synchronization
 import TerminalKitCodecs
 public import TerminalKitIO
 
@@ -10,6 +12,10 @@ public final class InputSource: Sendable {
     private let connection: any TerminalConnection
     /// Shared with the read loop, which captures it rather than `self`.
     private let unambiguousEscape: AtomicFlag
+    /// Set by ``stop()``; the loop checks it after every wait.
+    private let stopped = AtomicFlag(false)
+    /// The wake-up of every loop started, so ``stop()`` can interrupt them.
+    private let wakers = Mutex<[InputWaker]>([])
 
     /// Whether the terminal sends the Escape key as `CSI 27 u` (``TerminalSession/escapeIsUnambiguous``).
     /// Then a lone `ESC` at the end of a read is the start of a sequence split across reads, and waits for its
@@ -38,48 +44,38 @@ public final class InputSource: Sendable {
         self.continuation = cont
     }
 
-    /// Starts the read loop in a new task and returns it. The stream finishes however the loop ends, and a consumer
-    /// that stops iterating cancels the loop; a blocked read can't be interrupted, so cancellation lands when the read
-    /// returns.
+    /// Starts reading on a thread of its own and returns a task that ends when reading does.
+    ///
+    /// The thread waits in `poll` on the terminal and on a wake-up pipe, so it never holds a thread of Swift's
+    /// cooperative pool, and ``stop()``, cancelling the task, or a consumer that stops iterating ``events`` ends
+    /// it even while no byte arrives (roadmap 0009). Connections without a pollable descriptor are read directly.
     @discardableResult
     public func start() -> Task<Void, Never> {
-        let task = Task { [connection, continuation, unambiguousEscape] in
-            var router = SequenceRouter()
-            var routedEvents: [InputEvent] = []
-            let buffer = UnsafeMutableRawBufferPointer.allocate(byteCount: Self.readSize, alignment: 1)
-            defer {
-                buffer.deallocate()
-                continuation.finish()
+        let completion = InputCompletion()
+        if let waker = InputWaker() {
+            let loop = InputLoop(
+                connection: connection, continuation: continuation, unambiguousEscape: unambiguousEscape,
+                stopped: stopped, waker: waker)
+            let thread = Thread {
+                loop.run()
+                completion.finish()
             }
-
-            while !Task.isCancelled {
-                do {
-                    let count = try connection.read(into: buffer)
-                    if Task.isCancelled { return }
-                    let raw = UnsafeRawBufferPointer(start: buffer.baseAddress, count: count)
-                    let span: Span<UInt8> = raw.bytes._unsafeView(as: UInt8.self)
-                    router.feedAll(span, into: &routedEvents)
-                    // A full read may have cut a sequence short; any other ends where the terminal's writes did,
-                    // unless Escape is unambiguous, when a trailing ESC can only begin a sequence.
-                    if count < Self.readSize, !unambiguousEscape.value {
-                        router.flushPendingEscape(into: &routedEvents)
-                    }
-                    for event in routedEvents {
-                        if Task.isCancelled { return }
-                        continuation.yield(event)
-                    }
-                } catch TerminalError.readFailed(let code) where code == EINTR {
-                    continue
-                } catch {
-                    break
-                }
+            thread.name = "TerminalKit.input"
+            thread.stackSize = 256 * 1024
+            wakers.withLock { $0.append(waker) }
+            thread.start()
+        } else {
+            continuation.finish()
+            completion.finish()
+        }
+        continuation.onTermination = { [weak self] _ in self?.stop() }
+        return Task {
+            await withTaskCancellationHandler {
+                await completion.wait()
+            } onCancel: { [weak self] in
+                self?.stop()
             }
         }
-        let producerTask = task
-        continuation.onTermination = { @Sendable _ in
-            producerTask.cancel()
-        }
-        return task
     }
 
     /// Inject an event into the stream from outside the read loop (e.g., from a signal handler).
@@ -87,7 +83,10 @@ public final class InputSource: Sendable {
         continuation.yield(event)
     }
 
+    /// Stops reading: the thread leaves its wait and exits, and ``events`` finishes.
     public func stop() {
+        stopped.value = true
+        for waker in wakers.withLock({ $0 }) { waker.wake() }
         continuation.finish()
     }
 }

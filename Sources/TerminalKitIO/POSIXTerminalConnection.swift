@@ -24,6 +24,9 @@ public final class POSIXTerminalConnection: TerminalConnection, @unchecked Senda
             writeFileDescriptor ?? (fileDescriptor == STDIN_FILENO ? STDOUT_FILENO : fileDescriptor)
     }
 
+    /// The read descriptor, for an input loop to `poll`.
+    public var pollableFileDescriptor: Int32? { fd }
+
     /// Reads bytes from the file descriptor into `buffer`, retrying on `EINTR`.
     ///
     /// - Parameter buffer: The destination buffer to fill with incoming bytes.
