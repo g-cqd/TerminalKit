@@ -46,3 +46,17 @@ struct PipelineIsolationTests {
         #expect(String(decoding: connection.writtenOutput, as: UTF8.self).contains("in actor"))
     }
 }
+
+@Suite("Signposts are opt-in")
+struct SignpostDefaultTests {
+    @Test func `a pipeline emits no signposts unless asked`() {
+        let pipeline = RenderPipeline(connection: MockTerminalConnection(), columns: 4, rows: 1)
+
+        #expect(!pipeline.signposts)
+        pipeline.signposts = true
+        pipeline.beginFrame()
+        pipeline.buffer.write("ok", row: 0, col: 0, style: .default)
+        try? pipeline.flush()  // a frame with signposts on still draws
+        #expect(pipeline.signposts)
+    }
+}

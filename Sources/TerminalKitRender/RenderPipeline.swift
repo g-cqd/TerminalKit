@@ -1,3 +1,4 @@
+import Foundation
 import TerminalKitCodecs
 public import TerminalKitIO
 import os
@@ -41,6 +42,13 @@ public final class RenderPipeline {
 
     /// Persistent output buffer reused across frames to avoid allocation.
     private var outputBuffer = ContiguousArray<UInt8>()
+
+    /// Whether frames emit signposts for Instruments: off unless asked for, with this property or by setting
+    /// `TERMINALKIT_SIGNPOSTS=1` in the environment (ADR-0026).
+    ///
+    /// They allocate nothing (ADR-0016) but cost 0.45 µs a frame, more than a one-cell frame's own work, and
+    /// `OSLog.signpostsEnabled` is true whether or not anything is watching, so it cannot gate them.
+    public var signposts = ProcessInfo.processInfo.environment["TERMINALKIT_SIGNPOSTS"] == "1"
 
     /// The open frame interval's signpost — only one frame in flight at a time per
     /// pipeline, so a single optional is sufficient.
@@ -120,6 +128,7 @@ public final class RenderPipeline {
     public func beginFrame() {
         cursorRow = nil
         cursorCol = nil
+        guard signposts else { return }
         let frameSignpost = OSSignpostID(log: signpostLog)
         os_signpost(.begin, log: signpostLog, name: "frame", signpostID: frameSignpost)
         activeFrameSignpost = frameSignpost
@@ -154,10 +163,10 @@ public final class RenderPipeline {
     ///
     /// - Throws: `TerminalError` if the underlying connection write fails.
     public func flush() throws(TerminalError) {
-        let flushSignpost = OSSignpostID(log: signpostLog)
-        os_signpost(.begin, log: signpostLog, name: "flush", signpostID: flushSignpost)
+        let flushSignpost = signposts ? OSSignpostID(log: signpostLog) : nil
+        if let flushSignpost { os_signpost(.begin, log: signpostLog, name: "flush", signpostID: flushSignpost) }
         defer {
-            os_signpost(.end, log: signpostLog, name: "flush", signpostID: flushSignpost)
+            if let flushSignpost { os_signpost(.end, log: signpostLog, name: "flush", signpostID: flushSignpost) }
             endFrameSignpost()
         }
         outputBuffer.removeAll(keepingCapacity: true)
@@ -247,10 +256,12 @@ public final class RenderPipeline {
     ///
     /// - Throws: `TerminalError` if the underlying connection write fails.
     public func forceRedraw() throws(TerminalError) {
-        let redrawSignpost = OSSignpostID(log: signpostLog)
-        os_signpost(.begin, log: signpostLog, name: "forceRedraw", signpostID: redrawSignpost)
+        let redrawSignpost = signposts ? OSSignpostID(log: signpostLog) : nil
+        if let redrawSignpost { os_signpost(.begin, log: signpostLog, name: "forceRedraw", signpostID: redrawSignpost) }
         defer {
-            os_signpost(.end, log: signpostLog, name: "forceRedraw", signpostID: redrawSignpost)
+            if let redrawSignpost {
+                os_signpost(.end, log: signpostLog, name: "forceRedraw", signpostID: redrawSignpost)
+            }
             endFrameSignpost()
         }
         outputBuffer.removeAll(keepingCapacity: true)
