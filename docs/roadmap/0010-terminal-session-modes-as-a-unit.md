@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: 
 date: 2026-10-19
 ---
@@ -20,3 +20,10 @@ but no owner for them.
 - **Kitty keyboard disambiguation** where the terminal supports it (probed, ADR-0014), so Escape is
   unambiguous without the end-of-read heuristic. The heuristic stays the fallback.
 - Tests that every mode entered is left, on normal exit, a thrown error, and SIGTERM.
+
+## Done (2026-10-19)
+
+`TerminalSession` and `TerminalModes` in TerminalKitInput; ADR-0019. Entered in one write and left in one
+write, with the reverse order checked by a terminal model that keeps one keyboard stack per screen, as kitty
+and ghostty do. Kitty disambiguation is pushed when probed, and `InputSource(escapeIsUnambiguous:)` drops
+the end-of-read heuristic then. Tests cover a normal return, a thrown error, a failed entry and SIGTERM.

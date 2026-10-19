@@ -21,7 +21,7 @@ Requires Swift 6.4 and macOS 26. Kernel utilities come from Aemi at the revision
 | `TerminalKitIO` | Terminal connections, raw mode and geometry |
 | `TerminalKitStyle` | Style value types |
 | `TerminalKitCodecs` | Escape encoders and keyboard/mouse decoders |
-| `TerminalKitInput` | Input routing and streams |
+| `TerminalKitInput` | Input routing, streams, signals, and terminal sessions (modes entered and left as a unit) |
 | `TerminalKitText` | Rope, text operations and display metrics |
 | `TerminalKitRender` | Screen buffers, frame differences and output |
 | `TerminalKitTestSupport` | Terminal model and measurement helpers |
