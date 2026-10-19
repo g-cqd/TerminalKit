@@ -94,6 +94,17 @@ let package = Package(
             ],
             path: "Probes/InputPoolProbe",
             swiftSettings: strictSettings
+        ),
+        // Not a benchmark: UnicodeWidth's answers for the corpus real terminals are asked about (roadmap 0013).
+        .executableTarget(
+            name: "WidthProbe",
+            dependencies: [
+                .product(name: "TerminalKitText", package: "TerminalKit"),
+                .product(name: "TerminalKitRender", package: "TerminalKit"),
+                .product(name: "TerminalKitStyle", package: "TerminalKit")
+            ],
+            path: "Probes/WidthProbe",
+            swiftSettings: strictSettings
         )
     ]
 )

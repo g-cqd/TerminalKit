@@ -1,0 +1,57 @@
+# One grapheme per line, as hex code points; a comment names the case. Read by verify-unicode-width.py and
+# by Benchmarks/Probes/WidthProbe, so the terminals and UnicodeWidth are asked about the same sequences.
+41 # ASCII letter
+E9 # Latin precomposed
+65 301 # Latin with combining acute
+3B1 # Greek alpha (East Asian Ambiguous)
+44F # Cyrillic
+B1 # plus-minus (Ambiguous)
+2500 # box drawing (Ambiguous)
+2026 # ellipsis (Ambiguous)
+4E2D # CJK ideograph
+6F22 # CJK ideograph
+20000 # CJK Extension B
+AC00 # Hangul syllable
+1100 # Hangul Jamo leading
+1161 # Hangul Jamo medial
+3042 # Hiragana
+30A2 # Katakana
+FF21 # Fullwidth Latin A
+FF61 # Halfwidth ideographic full stop
+3000 # ideographic space
+E01 # Thai letter
+E31 # Thai combining vowel
+915 # Devanagari ka
+915 94D # Devanagari ka with virama
+200B # zero-width space
+200D # zero-width joiner alone
+FEFF # zero-width no-break space
+AD # soft hyphen
+1F600 # emoji presentation
+1F44D # thumbs up
+1F44D 1F3FD # thumbs up with skin tone
+1F3FD # skin tone modifier alone
+2764 # heart, text presentation
+2764 FE0F # heart with VS16
+263A # smiling face, text presentation
+263A FE0F # smiling face with VS16
+2705 # check mark button (emoji presentation)
+2714 # heavy check mark (text)
+26A0 # warning sign (text)
+26A0 FE0F # warning sign with VS16
+31 FE0F 20E3 # keycap one
+1F1EB 1F1F7 # flag France
+1F1EB # regional indicator alone
+1F468 200D 1F469 200D 1F467 # family ZWJ
+1F3F3 FE0F 200D 1F308 # rainbow flag
+1F9D1 200D 1F4BB # technologist
+1F469 1F3FD 200D 1F4BB # woman technologist with skin tone
+1F431 200D 1F464 # black cat ZWJ
+2615 # hot beverage (emoji presentation, BMP)
+231A # watch (emoji presentation, BMP)
+2B50 # star (emoji presentation, BMP)
+1F004 # mahjong red dragon
+1F170 # A button, text presentation
+1F170 FE0F # A button with VS16
+E000 # private use
+FFFD # replacement character
