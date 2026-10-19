@@ -51,6 +51,9 @@ Scripts/benchmarks.sh compare main    # this tree against main, same machine; fa
 Scripts/benchmarks.sh record          # rewrite Benchmarks/REFERENCE.md
 ```
 
+`Scripts/verify-scroll-region.sh` runs the real pipeline with a scroll region inside kitty, wezterm and
+Terminal.app and reads their screens back ([ADR-0022](docs/adr/0022-scroll-regions-are-detected-not-declared-per-frame.md)).
+
 ## Progress
 
 All six extracted modules compile, and the owning IO/codec/input/renderer/text suites run here.
