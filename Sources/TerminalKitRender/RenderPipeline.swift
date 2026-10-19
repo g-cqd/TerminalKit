@@ -29,7 +29,9 @@ public struct ScrollHint: Sendable {
 private let signpostLog = OSLog(subsystem: "com.kittytui.render", category: "frame")
 
 /// Double-buffered render pipeline with synchronized output.
-@MainActor
+///
+/// It belongs to no actor and is not `Sendable`: one owner, a dedicated thread or an actor of the app's own,
+/// draws into it and flushes it, and the compiler keeps it from being shared (roadmap 0014, ADR-0026).
 public final class RenderPipeline {
     private let connection: any TerminalConnection
     private var front: ScreenBuffer
