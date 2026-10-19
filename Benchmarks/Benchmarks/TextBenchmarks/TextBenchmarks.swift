@@ -25,6 +25,7 @@ let benchmarks: @Sendable () -> Void = {
         thresholds: Thresholds.perSuite
     )
 
+    registerWrapBenchmarks()
     for (name, graphemes) in corpora {
         Benchmark("width/\(name)") { benchmark in
             benchmark.startMeasurement()
