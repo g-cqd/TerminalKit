@@ -72,6 +72,18 @@ let package = Package(
             path: "Benchmarks/TextBenchmarks",
             swiftSettings: strictSettings,
             plugins: [.plugin(name: "BenchmarkPlugin", package: "benchmark")]
+        ),
+        // Not a benchmark: drives the real pipeline inside a real terminal for Scripts/verify-scroll-region.sh.
+        .executableTarget(
+            name: "StreamProbe",
+            dependencies: [
+                .product(name: "TerminalKitRender", package: "TerminalKit"),
+                .product(name: "TerminalKitIO", package: "TerminalKit"),
+                .product(name: "TerminalKitInput", package: "TerminalKit"),
+                .product(name: "TerminalKitStyle", package: "TerminalKit")
+            ],
+            path: "Probes/StreamProbe",
+            swiftSettings: strictSettings
         )
     ]
 )
