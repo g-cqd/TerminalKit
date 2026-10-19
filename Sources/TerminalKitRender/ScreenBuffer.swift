@@ -278,14 +278,13 @@ public struct ScreenBuffer: Sendable {
 
     /// Copies cells marked dirty in `source` into this buffer without sharing either grid's storage.
     /// - Precondition: Both buffers have the same dimensions.
-    /// - Complexity: O(columns × rows) time; O(1) extra space with unique storage, otherwise O(columns × rows).
+    /// - Complexity: O(columns × rows / 64 + dirty cells) time, walking the dirty bits a word at a time; O(1) extra
+    ///   space with unique storage, otherwise O(columns × rows).
     mutating func adoptDirtyCells(from source: ScreenBuffer) {
         precondition(columns == source.columns && rows == source.rows, "ScreenBuffer dimensions differ")
         let sourceCells = source.packed.span
         var destination = packed.mutableSpan
-        for index in 0 ..< destination.count where source.dirty.isDirty(index) {
-            destination[index] = sourceCells[index]
-        }
+        source.dirty.forEachDirtyIndex { index in destination[index] = sourceCells[index] }
     }
 
     /// Copies every cell after a forced redraw without sharing either grid's storage.
