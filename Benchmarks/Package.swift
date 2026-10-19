@@ -84,6 +84,16 @@ let package = Package(
             ],
             path: "Probes/StreamProbe",
             swiftSettings: strictSettings
+        ),
+        // Not a benchmark: does a running InputSource take a cooperative pool thread (roadmap 0009)?
+        .executableTarget(
+            name: "InputPoolProbe",
+            dependencies: [
+                .product(name: "TerminalKitIO", package: "TerminalKit"),
+                .product(name: "TerminalKitInput", package: "TerminalKit")
+            ],
+            path: "Probes/InputPoolProbe",
+            swiftSettings: strictSettings
         )
     ]
 )
