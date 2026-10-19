@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: 
 date: 2026-10-19
 ---
@@ -14,3 +14,9 @@ rewrites. Per ADR-0007 (generic tools belong in the shared package), promote:
 
 Measure, while promoting, how much grapheme iteration costs in wrapping. The same lesson as ask's 14 ms output
 cap: walk bytes where graphemes are not needed.
+
+## Done (2026-10-19)
+
+ADR-0025. `TextWrap` and `LayoutCache` are in `TerminalKitText`. Wrapping a 4 KB paragraph at 80 columns
+went from 236 to 19 µs, and from 213 allocations to 59, by walking bytes where graphemes are not needed. The
+grapheme-by-grapheme original is the oracle in the tests.
