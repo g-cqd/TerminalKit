@@ -99,7 +99,7 @@ public final class POSIXTerminalConnection: TerminalConnection, @unchecked Senda
         raw.c_cflag |= tcflag_t(CS8)
         raw.c_lflag &= ~tcflag_t(ECHO | ICANON | IEXTEN | ISIG)
         setRawModeControlCharacters(on: &raw)
-        guard retryOnInterrupt({ Int(tcsetattr(fd, TCSAFLUSH, &raw)) }) == 0 else {
+        guard apply(&raw) else {
             throw .failedToEnterRawMode
         }
         withTermiosLock { $0 = saved }
@@ -111,7 +111,7 @@ public final class POSIXTerminalConnection: TerminalConnection, @unchecked Senda
     /// - Throws: `TerminalError.failedToRestoreTerminal` if `tcsetattr` fails.
     public func restoreMode() throws(TerminalError) {
         guard var original = withTermiosLock({ $0 }) else { return }
-        guard retryOnInterrupt({ Int(tcsetattr(fd, TCSAFLUSH, &original)) }) == 0 else {
+        guard apply(&original) else {
             throw .failedToRestoreTerminal
         }
         withTermiosLock { $0 = nil }
@@ -170,6 +170,22 @@ public final class POSIXTerminalConnection: TerminalConnection, @unchecked Senda
     }
 
     // MARK: - Darwin helpers
+
+    /// Applies `settings` without ever waiting on output, and discards input nobody read.
+    ///
+    /// `TCSAFLUSH` waits for queued output to drain, and probed on a PTY it waits forever when output is
+    /// stopped (Ctrl-S, `TCOOFF`) or when the emulator has stopped reading (diary 2026-10-19-03). So:
+    /// - `tcflow(TCOON)` first, as rst does: in raw mode Ctrl-Q is a key, so nothing else would lift a stop,
+    ///   and the shell after us would sit frozen behind it;
+    /// - `TCSANOW`, which does not wait. Output already queued was processed when it was written, so the new
+    ///   output flags do not touch it (probed);
+    /// - `tcflush(TCIFLUSH)`, which keeps the half of `TCSAFLUSH` worth having: typeahead and late replies
+    ///   to probes are dropped rather than handed to the shell.
+    private func apply(_ settings: inout termios) -> Bool {
+        retryOnInterrupt({ Int(tcflow(fd, TCOON)) }) == 0
+            && retryOnInterrupt({ Int(tcsetattr(fd, TCSANOW, &settings)) }) == 0
+            && retryOnInterrupt({ Int(tcflush(fd, TCIFLUSH)) }) == 0
+    }
 
     @inline(__always)
     private func retryOnInterrupt(_ body: () -> Int) -> Int {
