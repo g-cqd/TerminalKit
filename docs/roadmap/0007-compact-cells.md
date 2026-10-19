@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: ["0006"]
 date: 2026-10-19
 ---
@@ -29,3 +29,10 @@ date: 2026-10-19
 ## Done when
 
 The ScreenBuffer suites in 0006 show the compare cost and memory drop, with the frame output byte-identical.
+
+## Done (2026-10-19)
+
+ADR-0021. 16-byte cells with an integer compare: an unchanged cell costs about 2.3 ns instead of 14, a
+full-screen flush is 5.9 times cheaper, and two 120×40 grids take 154 KB instead of 393. Every
+existing frame test passes byte-identical, and the allocation ceilings hold. One deliberate change: two
+spellings of one character are now two cells.
