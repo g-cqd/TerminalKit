@@ -1,4 +1,5 @@
 import TerminalKitStyle
+import TerminalKitText
 
 /// A cell as the screen buffers store it: 16 bytes, compared as two integers (roadmap 0007, ADR-0021).
 ///
@@ -16,6 +17,11 @@ struct PackedCell: Sendable, Equatable, BitwiseCopyable {
 
     /// The marker in the length byte for a grapheme kept in ``GraphemeTable``.
     static let overflowFlag: UInt64 = 0x80
+    /// A bit in the length byte: terminals disagree on this grapheme's width (``UnicodeWidth/isContested(_:)``),
+    /// so the diff places the next cell with a cursor move.
+    static let contestedFlag: UInt64 = 0x40
+    /// The bits of the length byte that hold the length.
+    static let lengthMask: UInt64 = 0x3F
 
     @inline(__always)
     init(low: UInt64, high: UInt64) {
@@ -37,6 +43,8 @@ struct PackedCell: Sendable, Equatable, BitwiseCopyable {
         let utf8 = character.utf8
         var low: UInt64 = 0
         var length: UInt64
+        // ASCII is never contested; anything else is asked.
+        let contested = utf8.count > 1 && UnicodeWidth.isContested(character)
         if utf8.count <= 8 {
             var shift: UInt64 = 0
             for byte in utf8 {
@@ -48,8 +56,13 @@ struct PackedCell: Sendable, Equatable, BitwiseCopyable {
             low = UInt64(GraphemeTable.id(of: character))
             length = Self.overflowFlag
         }
+        if contested { length |= Self.contestedFlag }
         self.init(low: low, high: length | UInt64(width) << 8 | UInt64(styleID) << 32)
     }
+
+    /// Whether terminals disagree on this cell's width, so the cell after it needs a cursor move.
+    @inline(__always)
+    var isContested: Bool { high & Self.contestedFlag != 0 }
 
     /// `cell`, packed.
     init(_ cell: Cell) {
@@ -71,20 +84,18 @@ struct PackedCell: Sendable, Equatable, BitwiseCopyable {
     /// The grapheme's UTF-8 length when it is stored inline, or nil for one kept in ``GraphemeTable``.
     @inline(__always)
     var inlineLength: Int? {
-        let length = high & 0xFF
-        return length == Self.overflowFlag ? nil : Int(length)
+        high & Self.overflowFlag != 0 ? nil : Int(high & Self.lengthMask)
     }
 
     /// Appends the grapheme's UTF-8 bytes.
     @inline(__always)
     func appendUTF8(to bytes: inout ContiguousArray<UInt8>) {
-        let length = high & 0xFF
-        if length == Self.overflowFlag {
+        if high & Self.overflowFlag != 0 {
             bytes.append(contentsOf: GraphemeTable.character(UInt32(truncatingIfNeeded: low)).utf8)
             return
         }
         var remaining = low
-        for _ in 0 ..< length {
+        for _ in 0 ..< high & Self.lengthMask {
             bytes.append(UInt8(truncatingIfNeeded: remaining))
             remaining >>= 8
         }
@@ -92,8 +103,8 @@ struct PackedCell: Sendable, Equatable, BitwiseCopyable {
 
     /// The grapheme, decoded.
     var character: Character {
-        let length = high & 0xFF
-        if length == Self.overflowFlag { return GraphemeTable.character(UInt32(truncatingIfNeeded: low)) }
+        let length = high & Self.lengthMask
+        if high & Self.overflowFlag != 0 { return GraphemeTable.character(UInt32(truncatingIfNeeded: low)) }
         // SAFETY: the eight bytes of a local value, of which the first `length` (at most eight) are read.
         let string = withUnsafeBytes(of: low.littleEndian) { raw in
             unsafe String(decoding: raw.prefix(Int(length)), as: UTF8.self)
