@@ -63,6 +63,24 @@ public final class RenderPipeline {
     /// A scroll for the next `flush()` to perform in the terminal; the flush clears it once performed.
     public var scrollHint: ScrollHint?
 
+    /// Rows whose content scrolls together, such as a transcript (roadmap 0011).
+    ///
+    /// When set, `flush()` finds the shift that best explains the frame's change inside these rows, scrolls the
+    /// terminal's rows by it (DECSTBM, then SU or SD), and draws only what the scroll did not bring. A streamed
+    /// line becomes a scroll and one row instead of a redraw of every row. An explicit ``scrollHint`` wins.
+    public var scrollRegion: Range<Int>? {
+        didSet { if scrollRegion != oldValue { hashedRegion = nil } }
+    }
+
+    /// Hashes of the front buffer's rows in ``hashedRegion``, kept from flush to flush: after a flush the front
+    /// buffer equals the back buffer, so only the rows a frame changed need hashing again.
+    private var frontRowHashes = ContiguousArray<UInt64>()
+    /// The back buffer's, for the frame being flushed.
+    private var backRowHashes = ContiguousArray<UInt64>()
+    /// The rows ``frontRowHashes`` describes, or nil when they describe nothing (never hashed, resized,
+    /// redrawn, or shifted by an explicit hint).
+    private var hashedRegion: Range<Int>?
+
     /// The regions marked dirty since the last `clearDirtyRegions()`.
     public private(set) var dirtyRegions = DirtyRegions()
 
@@ -144,6 +162,14 @@ public final class RenderPipeline {
 
         EscapeSequences.appendBeginSyncUpdate(to: &outputBuffer)
 
+        var detected = false
+        if scrollHint == nil, let region = scrollRegion {
+            scrollHint = detectScroll(in: region)
+            detected = scrollHint != nil
+        } else if scrollHint != nil {
+            hashedRegion = nil  // an explicit hint shifts the front buffer without the hashes
+        }
+
         if let hint = scrollHint, hint.delta != 0, hint.regionHeight > 0,
             hint.delta.magnitude < UInt(hint.regionHeight)
         {
@@ -178,17 +204,7 @@ public final class RenderPipeline {
 
             // The scroll moved every column, including ones this frame never wrote (sidebar, separators): mark any
             // cell where the shifted front differs from back so the diff re-emits it.
-            let cols = buffer.columns
-            let regionEnd = hint.regionTop + hint.regionHeight
-            for row in hint.regionTop ..< regionEnd {
-                let base = row &* cols
-                for col in 0 ..< cols {
-                    let idx = base &+ col
-                    if front.packed[idx] != buffer.packed[idx] {
-                        buffer.dirty.mark(idx)
-                    }
-                }
-            }
+            buffer.markDifferences(from: front, rows: hint.regionTop ..< hint.regionTop + hint.regionHeight)
 
             scrollHint = nil
             // The terminal scrolled the placements along with the cells; put them back.
@@ -218,6 +234,7 @@ public final class RenderPipeline {
         }
 
         front.adoptDirtyCells(from: buffer)
+        updateFrontRowHashes(detected: detected)
         buffer.dirty.clear()
     }
 
@@ -250,7 +267,71 @@ public final class RenderPipeline {
         EscapeSequences.appendEndSyncUpdate(to: &outputBuffer)
         try connection.writeContiguous(outputBuffer)
         front.adoptAllCells(from: buffer)
+        hashedRegion = nil
         buffer.dirty.clear()
+    }
+
+    /// The shift of `requested`'s rows from the front buffer to the back buffer that leaves the most rows in
+    /// place, or nil when no shift beats leaving them where they are.
+    ///
+    /// - Complexity: O(rows × columns) to hash the region's rows, then O(rows²) to score the shifts; nothing
+    ///   when fewer than two of its rows changed.
+    private func detectScroll(in requested: Range<Int>) -> ScrollHint? {
+        let region = requested.clamped(to: 0 ..< rows)
+        guard region.count >= 2 else { return nil }
+        let cols = buffer.columns
+        var changedRows = 0
+        for row in region where buffer.dirty.isAnyDirty(in: row &* cols ..< (row &+ 1) &* cols) {
+            changedRows &+= 1
+            if changedRows == 2 { break }
+        }
+        guard changedRows == 2 else { return nil }
+
+        if hashedRegion != region {
+            frontRowHashes.removeAll(keepingCapacity: true)
+            for row in region { frontRowHashes.append(front.rowHash(row)) }
+            hashedRegion = region
+        }
+        // A row the frame did not touch equals the front buffer's, whose hash is already known.
+        backRowHashes.removeAll(keepingCapacity: true)
+        for row in region {
+            let dirty = buffer.dirty.isAnyDirty(in: row &* cols ..< (row &+ 1) &* cols)
+            backRowHashes.append(dirty ? buffer.rowHash(row) : frontRowHashes[row &- region.lowerBound])
+        }
+        let height = region.count
+        func score(_ delta: Int) -> Int {
+            var matched = 0
+            for index in max(0, -delta) ..< min(height, height &- delta)
+            where backRowHashes[index] == frontRowHashes[index &+ delta] {
+                matched &+= 1
+            }
+            return matched
+        }
+        var best = (delta: 0, matched: score(0))
+        for magnitude in 1 ..< height {
+            // Every shift leaves at most `height - magnitude` rows in place; none further out can win.
+            guard height &- magnitude > best.matched else { break }
+            for delta in [magnitude, -magnitude] {
+                let matched = score(delta)
+                if matched > best.matched { best = (delta, matched) }
+            }
+        }
+        guard best.delta != 0 else { return nil }
+        return ScrollHint(regionTop: region.lowerBound, regionHeight: height, delta: best.delta)
+    }
+
+    /// Brings ``frontRowHashes`` up to the front buffer after a flush: the back buffer's hashes when this
+    /// flush computed them all, otherwise a new hash for each row the frame changed.
+    private func updateFrontRowHashes(detected: Bool) {
+        guard let region = hashedRegion else { return }
+        if detected {
+            swap(&frontRowHashes, &backRowHashes)
+            return
+        }
+        let cols = buffer.columns
+        for row in region where buffer.dirty.isAnyDirty(in: row &* cols ..< (row &+ 1) &* cols) {
+            frontRowHashes[row &- region.lowerBound] = front.rowHash(row)
+        }
     }
 
     /// Closes the frame interval `beginFrame()` opened, if one is open.
@@ -269,6 +350,7 @@ public final class RenderPipeline {
     ///   - columns: The new number of columns.
     ///   - rows: The new number of rows.
     public func resize(columns: Int, rows: Int) {
+        hashedRegion = nil
         front.resize(columns: columns, rows: rows)
         buffer.resize(columns: columns, rows: rows)
         chrome?.reset()

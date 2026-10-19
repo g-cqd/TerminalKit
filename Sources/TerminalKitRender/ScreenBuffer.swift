@@ -166,6 +166,32 @@ public struct ScreenBuffer: Sendable {
         }
     }
 
+    /// Marks dirty every cell of `rows` that differs from `other`'s, which has the same dimensions: after a
+    /// terminal scroll, the cells the scroll moved wrongly, such as a sidebar's, or the row it exposed.
+    mutating func markDifferences(from other: ScreenBuffer, rows: Range<Int>) {
+        let mine = packed.span
+        let theirs = other.packed.span
+        for index in rows.lowerBound &* columns ..< rows.upperBound &* columns where mine[index] != theirs[index] {
+            dirty.mark(index)
+        }
+    }
+
+    /// A hash of row `row`'s cells, for finding where rows moved between two frames. Equal rows hash equal;
+    /// unequal rows rarely do, and a collision only costs bytes, since the diff still compares every cell.
+    @inline(__always)
+    func rowHash(_ row: Int) -> UInt64 {
+        // Each cell is mixed on its own and the results are added, so no multiply waits for the one before it;
+        // the column is mixed in so two cells that swap places change the hash.
+        var hash: UInt64 = 0
+        let base = row &* columns
+        let cells = packed.span
+        for col in 0 ..< columns {
+            let cell = cells[base &+ col]
+            hash &+= (cell.low ^ UInt64(col) &* 0x9E37_79B9_7F4A_7C15) &* 0xBF58_476D_1CE4_E5B9 ^ cell.high
+        }
+        return hash
+    }
+
     /// Replaces every cell in the buffer with `Cell.empty`, marking changed cells dirty.
     public mutating func clear() {
         for i in packed.indices where packed[i] != .empty {
@@ -226,13 +252,16 @@ public struct ScreenBuffer: Sendable {
             return
         }
 
+        // Through a span: indexing the array would check its uniqueness on every store.
+        let columns = columns
+        var cells = packed.mutableSpan
         if delta > 0 {
             // Scroll down: content moves up
             for row in regionY ..< (regionY + regionHeight - delta) {
                 let dstBase = row &* columns
                 let srcBase = (row &+ delta) &* columns
                 for col in regionX ..< (regionX + regionWidth) {
-                    packed[dstBase &+ col] = packed[srcBase &+ col]
+                    cells[dstBase &+ col] = cells[srcBase &+ col]
                 }
             }
         } else {
@@ -241,7 +270,7 @@ public struct ScreenBuffer: Sendable {
                 let dstBase = row &* columns
                 let srcBase = (row &- absDelta) &* columns
                 for col in regionX ..< (regionX + regionWidth) {
-                    packed[dstBase &+ col] = packed[srcBase &+ col]
+                    cells[dstBase &+ col] = cells[srcBase &+ col]
                 }
             }
         }

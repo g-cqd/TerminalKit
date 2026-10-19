@@ -53,6 +53,22 @@ public struct DirtyTracker: Sendable, Equatable {
         return (bits[word] & (1 &<< bit)) != 0
     }
 
+    /// Whether any index in `range` is dirty, a word at a time.
+    func isAnyDirty(in range: Range<Int>) -> Bool {
+        let lo = max(range.lowerBound, 0)
+        let hi = min(range.upperBound, capacity)
+        guard lo < hi else { return false }
+        let firstWord = lo >> 6
+        let lastWord = (hi - 1) >> 6
+        for word in firstWord ... lastWord {
+            var mask = UInt64.max
+            if word == firstWord { mask &= UInt64.max << (lo & 63) }
+            if word == lastWord { mask &= UInt64.max >> (63 - ((hi - 1) & 63)) }
+            if bits[word] & mask != 0 { return true }
+        }
+        return false
+    }
+
     public mutating func clear() {
         bits.withUnsafeMutableBufferPointer { buf in
             buf.update(repeating: 0)
