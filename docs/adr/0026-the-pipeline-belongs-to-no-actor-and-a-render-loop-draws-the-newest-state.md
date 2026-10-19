@@ -92,3 +92,11 @@ What the numbers say:
 - Tests: a frame runs on `TerminalKit.render`; a state submitted during a frame replaces the ones before it
   (`["one", "four"]`); `finish()` draws the last; a later submit is ignored; the second frame is a diff; a
   resize redraws at the new size; a failing connection ends the loop; `halt()` draws nothing more.
+
+## Addendum: one writer at a time
+
+A render thread writes frames while an event loop may write an escape sequence (`TerminalSession` pushes the
+keyboard flags when the terminal answers its query). `SerializedConnection` wraps a connection so each write
+holds a lock while it runs; a sequence then lands before a frame or after it, never inside it. Tested with a
+connection that appends byte by byte: two threads writing 2,000 bytes each leave two whole runs through the
+wrapper and interleave without it (the control, run beside it).
