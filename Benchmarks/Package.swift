@@ -105,6 +105,17 @@ let package = Package(
             ],
             path: "Probes/WidthProbe",
             swiftSettings: strictSettings
+        ),
+        // Not a benchmark: who should own the render pipeline, under load (roadmap 0014).
+        .executableTarget(
+            name: "IsolationProbe",
+            dependencies: [
+                .product(name: "TerminalKitRender", package: "TerminalKit"),
+                .product(name: "TerminalKitIO", package: "TerminalKit"),
+                .product(name: "TerminalKitStyle", package: "TerminalKit")
+            ],
+            path: "Probes/IsolationProbe",
+            swiftSettings: strictSettings
         )
     ]
 )
