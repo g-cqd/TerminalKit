@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: ["0006"]
 date: 2026-10-19
 ---
@@ -15,3 +15,9 @@ app's own concurrency never loses a pool thread to the terminal.
 
 Keystroke-to-event latency before and after, under a loaded pool (many concurrent tasks), with the 0006 suite
 and a PTY probe.
+
+## Done (2026-10-19)
+
+ADR-0023. Reading moved to a `TerminalKit.input` thread that waits in `poll` beside a wake-up pipe:
+- a CPU-bound batch beside a reading source takes 15.7 ms instead of 23.4 (15.5 alone);
+- `stop()` now ends a source that is waiting for input.
