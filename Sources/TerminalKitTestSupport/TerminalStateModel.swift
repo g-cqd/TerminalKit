@@ -56,6 +56,19 @@ public struct TerminalStateModel: Sendable {
     /// The line currently being written.
     private var currentLine = ""
 
+    /// Kitty keyboard flags pushed with `CSI > flags u` and not yet popped, on the main screen.
+    ///
+    /// The kitty keyboard protocol keeps one stack per screen, so flags pushed on the alternate screen
+    /// and never popped there stay behind when the program leaves it.
+    public private(set) var mainScreenKeyboardModes: [Int] = []
+    /// Kitty keyboard flags pushed and not yet popped, on the alternate screen.
+    public private(set) var alternateScreenKeyboardModes: [Int] = []
+
+    /// Whether any kitty keyboard flags remain pushed on either screen.
+    public var hasNoKeyboardModesPushed: Bool {
+        mainScreenKeyboardModes.isEmpty && alternateScreenKeyboardModes.isEmpty
+    }
+
     public init() {}
 
     /// Puts the model into the state a full-screen program leaves behind when it is killed without
@@ -108,8 +121,13 @@ public struct TerminalStateModel: Sendable {
     private mutating func consumeControlSequence(_ bytes: [UInt8], startingAt start: Int) -> Int {
         var index = start
         var privateMarker = false
+        var keyboardMarker: UInt8?
         while index < bytes.count, bytes[index] == 0x3F || bytes[index] == 0x21 {  // '?' or '!'
             privateMarker = bytes[index] == 0x3F
+            index += 1
+        }
+        if index < bytes.count, bytes[index] == 0x3E || bytes[index] == 0x3C {  // '>' push, '<' pop
+            keyboardMarker = bytes[index]
             index += 1
         }
         var parameterText = ""
@@ -121,7 +139,11 @@ public struct TerminalStateModel: Sendable {
         let final = bytes[index]
         let parameters = parameterText.split(separator: ";").compactMap { Int($0) }
 
-        if !privateMarker, parameterText.isEmpty, final == 0x70 {  // CSI ! p — DECSTR
+        if let keyboardMarker, final == 0x75 {  // CSI > flags u, CSI < count u
+            applyKeyboardMode(keyboardMarker, parameters)
+        } else if keyboardMarker != nil {
+            // Another sequence with a '>' or '<' marker; not modelled.
+        } else if !privateMarker, parameterText.isEmpty, final == 0x70 {  // CSI ! p — DECSTR
             resetAll(preservingHistory: true)
         } else if final == 0x68 || final == 0x6C {  // h / l
             setPrivateModes(parameters, enabled: final == 0x68)
@@ -151,6 +173,22 @@ public struct TerminalStateModel: Sendable {
         }
     }
 
+    /// `CSI > flags u` pushes onto the current screen's stack; `CSI < n u` pops `n`, default one, and
+    /// popping an empty stack does nothing.
+    private mutating func applyKeyboardMode(_ marker: UInt8, _ parameters: [Int]) {
+        var stack = isAlternateScreen ? alternateScreenKeyboardModes : mainScreenKeyboardModes
+        if marker == 0x3E {
+            stack.append(parameters.first ?? 0)
+        } else {
+            stack.removeLast(min(stack.count, max(1, parameters.first ?? 1)))
+        }
+        if isAlternateScreen {
+            alternateScreenKeyboardModes = stack
+        } else {
+            mainScreenKeyboardModes = stack
+        }
+    }
+
     private mutating func applyGraphicRendition(_ parameters: [Int]) {
         // An empty parameter list is `ESC [ m`, which means "no attributes".
         activeGraphicRenditions = parameters.isEmpty ? [] : Set(parameters)
@@ -167,6 +205,8 @@ public struct TerminalStateModel: Sendable {
     private mutating func resetAll(preservingHistory: Bool) {
         if !preservingHistory {
             enabledPrivateModes.removeAll()
+            mainScreenKeyboardModes.removeAll()
+            alternateScreenKeyboardModes.removeAll()
             screenLines.removeAll()
             scrollbackLines.removeAll()
             currentLine = ""

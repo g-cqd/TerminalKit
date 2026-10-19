@@ -87,7 +87,7 @@ let package = Package(
         .target(
             name: "TerminalKitInput",
             dependencies: [
-                "TerminalKitCodecs", "TerminalKitIO", "CTerminalSignals",
+                "TerminalKitCodecs", "TerminalKitIO", "TerminalKitCore", "CTerminalSignals",
                 .product(name: "AemiKernel", package: "aemi")
             ],
             path: "Sources/TerminalKitInput",
@@ -122,7 +122,7 @@ let package = Package(
         .testTarget(
             name: "TerminalKitInputTests",
             dependencies: [
-                "TerminalKitInput", "TerminalKitCodecs", "TerminalKitIO",
+                "TerminalKitInput", "TerminalKitCodecs", "TerminalKitIO", "TerminalKitTestSupport",
                 .product(name: "AemiTestKit", package: "aemi")
             ],
             path: "Tests/TerminalKitInputTests",
