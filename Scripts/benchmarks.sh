@@ -64,6 +64,8 @@ case "${1:-}" in
 
         printf '==> regression check, base against head\n'
         # The plugin exits 1 for a regression and for an improvement alike; only its message tells them apart.
+        # Its tables can be cut mid-character, so grep reads the output as bytes (-a, LC_ALL=C): on CI a
+        # mangled box character made grep miss "benchmarkThresholdImprovement" and fail an improvement.
         set +e
         output=$(cd "$bench" && swift package benchmark baseline check base head --no-progress 2>&1)
         status=$?
@@ -71,10 +73,10 @@ case "${1:-}" in
         printf '%s\n' "$output"
         if [ "$status" -eq 0 ]; then
             printf '\n[OK] no change beyond the thresholds\n'
-        elif printf '%s' "$output" | grep -q benchmarkThresholdRegression; then
+        elif printf "%s" "$output" | LC_ALL=C grep -aq benchmarkThresholdRegression; then
             printf '\n[FAIL] regression beyond the thresholds\n' >&2
             exit 1
-        elif printf '%s' "$output" | grep -q benchmarkThresholdImprovement; then
+        elif printf "%s" "$output" | LC_ALL=C grep -aq benchmarkThresholdImprovement; then
             printf '\n[OK] improvements only\n'
         else
             printf '\n[FAIL] the check did not run\n' >&2
