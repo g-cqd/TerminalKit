@@ -41,6 +41,10 @@ case "${1:-}" in
         scratch=$(mktemp -d)
         trap 'git -C "$root" worktree remove --force "$scratch/base" >/dev/null 2>&1; rm -rf "$scratch"' EXIT
         git -C "$root" worktree add --detach "$scratch/base" "$base" >/dev/null
+        # The same toolchain for both runs, or the comparison times the compiler: swiftly picks it from
+        # .swift-version, which CI's setup step rewrites in the checkout (6.4 became 6.4.1) but not in
+        # a fresh worktree.
+        [ -f "$root/.swift-version" ] && cp "$root/.swift-version" "$scratch/base/.swift-version"
         # This tree's benchmarks, without its build products: a copied .build carries absolute paths.
         rm -rf "$scratch/base/Benchmarks"
         rsync -a --exclude .build --exclude .benchmarkBaselines "$bench/" "$scratch/base/Benchmarks/"
