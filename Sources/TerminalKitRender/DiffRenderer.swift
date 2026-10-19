@@ -89,6 +89,7 @@ public enum DiffRenderer: Sendable {
     /// Renders the entire buffer into a caller-provided buffer.
     public static func renderFull(_ buffer: ScreenBuffer, into bytes: inout ContiguousArray<UInt8>) {
         var lastStyle = StyleState()
+        var realign = false
 
         for row in 0 ..< buffer.rows {
             EscapeSequences.appendMoveCursor(row: row + 1, col: 1, to: &bytes)
@@ -99,9 +100,12 @@ public enum DiffRenderer: Sendable {
                 // Skip continuation cells
                 if cell.isContinuation { continue }
 
+                if realign { EscapeSequences.appendMoveCursor(row: row + 1, col: col + 1, to: &bytes) }
                 lastStyle.move(to: cell.styleID, into: &bytes)
                 cell.appendUTF8(to: &bytes)
+                realign = cell.isContested
             }
+            realign = false
         }
 
         if lastStyle.style != .default {
@@ -126,7 +130,9 @@ public enum DiffRenderer: Sendable {
             let cell = buffer.packed[base &+ col]
             // One column, inline, already in the terminal's current style: written as it is, it changes
             // nothing on screen.
-            guard cell.width == 1, cell.styleID == styleID, let utf8 = cell.inlineLength else { return false }
+            guard cell.width == 1, !cell.isContested, cell.styleID == styleID, let utf8 = cell.inlineLength else {
+                return false
+            }
             length &+= utf8
         }
         guard length <= moveCost else { return false }
@@ -168,6 +174,8 @@ public enum DiffRenderer: Sendable {
         guard colStart < colEnd else { return }
 
         var emittedAnyCell = false
+        // After a grapheme terminals disagree on, the cursor is wherever that terminal put it.
+        var realign = false
 
         let base = row &* back.columns
         for col in colStart ..< colEnd {
@@ -175,10 +183,11 @@ public enum DiffRenderer: Sendable {
             guard front.packed[base &+ col] != cell else { continue }
             guard !cell.isContinuation else { continue }
 
+            let isFirst = !emittedAnyCell
             if !emittedAnyCell {
                 if row != lastRow || col != lastCol {
                     let bridged =
-                        row == lastRow && col > lastCol
+                        row == lastRow && lastCol >= 0 && col > lastCol
                         && writeGap(back, row: row, from: lastCol, to: col, styleID: lastStyle.id, into: &bytes)
                     if !bridged {
                         EscapeSequences.appendMoveCursor(
@@ -191,13 +200,18 @@ public enum DiffRenderer: Sendable {
                 emittedAnyCell = true
             }
 
+            if realign, !isFirst {
+                EscapeSequences.appendMoveCursor(row: row + 1, col: col + 1, to: &bytes)
+            }
             lastStyle.move(to: cell.styleID, into: &bytes)
             cell.appendUTF8(to: &bytes)
+            realign = cell.isContested
         }
 
         guard emittedAnyCell else { return }
 
         lastRow = row
-        lastCol = colEnd
+        // A contested last cell leaves the cursor somewhere unknown, so the next run must move.
+        lastCol = realign ? -1 : colEnd
     }
 }

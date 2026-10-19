@@ -114,4 +114,22 @@ import Testing
         // U+1E00 Ḁ — Latin Extended Additional, narrow.
         #expect(UnicodeWidth.displayWidth(of: "Ḁ") == 1)
     }
+
+    // Measured on kitty, ghostty, wezterm and Terminal.app (roadmap 0013): a combining mark on its own takes no
+    // column in any of them, and the Hangul Jamo vowels and finals take none in three of the four.
+    @Test func `a combining mark on its own takes no column`() {
+        #expect(UnicodeWidth.displayWidth(of: Character("\u{E31}")) == 0)
+        #expect(UnicodeWidth.displayWidth(of: Character("\u{301}")) == 0)
+        #expect(UnicodeWidth.displayWidth(of: Character("\u{20DD}")) == 0)
+    }
+
+    @Test func `a Hangul Jamo vowel or final on its own takes no column`() {
+        #expect(UnicodeWidth.displayWidth(of: Character("\u{1161}")) == 0)
+        #expect(UnicodeWidth.displayWidth(of: Character("\u{11A8}")) == 0)
+    }
+
+    @Test func `a base with its combining marks takes the base's columns`() {
+        #expect(UnicodeWidth.displayWidth(of: Character("e\u{301}")) == 1)
+        #expect(UnicodeWidth.displayWidth(of: Character("\u{4E2D}\u{301}")) == 2)
+    }
 }
