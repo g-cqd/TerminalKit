@@ -49,3 +49,53 @@ struct DirtyTrackerTests {
         #expect(ranges[0].colEnd == 3)
     }
 }
+
+@Suite("Dirty indices are walked a word at a time")
+struct DirtyIndexWalkTests {
+    @Test func `every dirty index is visited once, in order, and no other`() {
+        var tracker = DirtyTracker(capacity: 300)
+        let marked = [0, 1, 63, 64, 65, 127, 128, 200, 299]
+        for index in marked { tracker.mark(index) }
+
+        var visited: [Int] = []
+        tracker.forEachDirtyIndex { visited.append($0) }
+
+        #expect(visited == marked)
+    }
+
+    @Test func `marking everything visits every index and none past the capacity`() {
+        // markAll sets whole words, so the last word holds bits beyond a capacity that is not a multiple of 64.
+        var tracker = DirtyTracker(capacity: 100)
+        tracker.markAll()
+
+        var visited: [Int] = []
+        tracker.forEachDirtyIndex { visited.append($0) }
+
+        #expect(visited == Array(0 ..< 100))
+    }
+
+    @Test func `clearing then marking elsewhere reports only the new marks`() {
+        // The tracker remembers which words were touched; a clear must forget them, and a later mark far away
+        // must still be found by every query.
+        var tracker = DirtyTracker(capacity: 1_000)
+        tracker.markRange(10 ..< 20)
+        tracker.clear()
+        tracker.mark(900)
+
+        var visited: [Int] = []
+        tracker.forEachDirtyIndex { visited.append($0) }
+        #expect(visited == [900])
+        #expect(!tracker.isEmpty)
+        #expect(tracker.dirtyRanges(columns: 100).map { [$0.row, $0.colStart, $0.colEnd] } == [[9, 0, 1]])
+        tracker.clear()
+        #expect(tracker.isEmpty)
+        #expect(tracker == DirtyTracker(capacity: 1_000))
+    }
+
+    @Test func `an empty tracker visits nothing`() {
+        var visited = 0
+        DirtyTracker(capacity: 1_000).forEachDirtyIndex { _ in visited += 1 }
+
+        #expect(visited == 0)
+    }
+}

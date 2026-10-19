@@ -1,6 +1,10 @@
 /// Bitset-based dirty region tracker for screen buffer.
 public struct DirtyTracker: Sendable, Equatable {
     private var bits: ContiguousArray<UInt64>
+    /// The words any mark has touched since the last clear, so clearing, testing and walking cost what was
+    /// marked rather than the whole screen (roadmap 0008). Empty when `firstTouched > lastTouched`.
+    private var firstTouched = Int.max
+    private var lastTouched = -1
     public let capacity: Int
 
     public init(capacity: Int) {
@@ -14,6 +18,7 @@ public struct DirtyTracker: Sendable, Equatable {
         let word = index >> 6  // / 64
         let bit = index & 63  // % 64
         bits[word] |= (1 &<< bit)
+        touch(word, word)
     }
 
     /// Marks a contiguous range of indices dirty.
@@ -26,6 +31,7 @@ public struct DirtyTracker: Sendable, Equatable {
         let lastWord = (hi - 1) >> 6
         let firstBit = lo & 63
         let lastBit = (hi - 1) & 63
+        touch(firstWord, lastWord)
 
         if firstWord == lastWord {
             let mask = (UInt64.max << firstBit) & (UInt64.max >> (63 - lastBit))
@@ -44,6 +50,7 @@ public struct DirtyTracker: Sendable, Equatable {
         bits.withUnsafeMutableBufferPointer { buf in
             buf.update(repeating: UInt64.max)
         }
+        touch(0, bits.count &- 1)
     }
 
     public func isDirty(_ index: Int) -> Bool {
@@ -51,6 +58,23 @@ public struct DirtyTracker: Sendable, Equatable {
         let word = index >> 6
         let bit = index & 63
         return (bits[word] & (1 &<< bit)) != 0
+    }
+
+    /// Calls `body` with every dirty index in ascending order, a word at a time: O(words + dirty), not
+    /// O(capacity), so a frame that changed one cell does not visit the others.
+    @inline(__always)
+    func forEachDirtyIndex(_ body: (Int) -> Void) {
+        guard firstTouched <= lastTouched else { return }
+        let words = bits.span
+        for word in firstTouched ... lastTouched {
+            var remaining = words[word]
+            // `markAll()` sets the last word's bits past `capacity` too; they name no cell.
+            if word == words.count &- 1, capacity & 63 != 0 { remaining &= (1 &<< UInt64(capacity & 63)) &- 1 }
+            while remaining != 0 {
+                body(word &<< 6 &+ remaining.trailingZeroBitCount)
+                remaining &= remaining &- 1
+            }
+        }
     }
 
     /// Whether any index in `range` is dirty, a word at a time.
@@ -70,18 +94,32 @@ public struct DirtyTracker: Sendable, Equatable {
     }
 
     public mutating func clear() {
-        bits.withUnsafeMutableBufferPointer { buf in
-            buf.update(repeating: 0)
-        }
+        guard firstTouched <= lastTouched else { return }
+        let touched = firstTouched ... lastTouched
+        var words = bits.mutableSpan
+        for word in touched { words[word] = 0 }
+        firstTouched = .max
+        lastTouched = -1
     }
 
     public var isEmpty: Bool {
-        // OR-reduce all words — any non-zero means dirty cells exist
-        bits.withUnsafeBufferPointer { buf in
-            var acc: UInt64 = 0
-            for w in buf { acc |= w }
-            return acc == 0
-        }
+        // OR-reduce the touched words — any non-zero means dirty cells exist
+        guard firstTouched <= lastTouched else { return true }
+        let words = bits.span
+        var acc: UInt64 = 0
+        for word in firstTouched ... lastTouched { acc |= words[word] }
+        return acc == 0
+    }
+
+    /// Two trackers are equal when they mark the same cells; which words were touched is bookkeeping.
+    public static func == (lhs: DirtyTracker, rhs: DirtyTracker) -> Bool {
+        lhs.capacity == rhs.capacity && lhs.bits == rhs.bits
+    }
+
+    @inline(__always)
+    private mutating func touch(_ first: Int, _ last: Int) {
+        if first < firstTouched { firstTouched = first }
+        if last > lastTouched { lastTouched = last }
     }
 
     /// Returns ranges of contiguous dirty cells per row using word-level CTZ scanning.
@@ -96,10 +134,13 @@ public struct DirtyTracker: Sendable, Equatable {
     /// Calls `body` with each run of contiguous dirty cells, row by row, in order, without
     /// materializing them: the renderer walks these on every flush, which must not allocate.
     public func forEachDirtyRange(columns: Int, _ body: (_ row: Int, _ colStart: Int, _ colEnd: Int) -> Void) {
-        guard columns > 0 else { return }
+        guard columns > 0, firstTouched <= lastTouched else { return }
         let rows = capacity / columns
+        // Only the rows the touched words cover can hold a dirty cell.
+        let firstRow = (firstTouched &<< 6) / columns
+        let endRow = Swift.min(rows, ((lastTouched &+ 1) &<< 6 &+ columns &- 1) / columns)
 
-        for row in 0 ..< rows {
+        for row in firstRow ..< Swift.max(firstRow, endRow) {
             let rowStart = row * columns
             var col = 0
             while col < columns {
