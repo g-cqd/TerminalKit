@@ -20,7 +20,7 @@ struct TerminalSessionTests {
 
     @Test func `entering takes raw mode, then one write`() throws {
         let connection = RecordingConnection()
-        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: true)
+        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocol: .supported)
 
         try session.enter()
 
@@ -30,7 +30,7 @@ struct TerminalSessionTests {
 
     @Test func `entering puts the terminal in every requested mode`() throws {
         let connection = RecordingConnection()
-        try TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: true).enter()
+        try TerminalSession(connection: connection, modes: everything, keyboardProtocol: .supported).enter()
 
         let terminal = model(after: connection.written)
         #expect(terminal.isAlternateScreen)
@@ -42,7 +42,7 @@ struct TerminalSessionTests {
 
     @Test func `leaving returns the terminal to its defaults in one write`() throws {
         let connection = RecordingConnection()
-        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: true)
+        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocol: .supported)
         try session.enter()
 
         session.leave()
@@ -60,7 +60,7 @@ struct TerminalSessionTests {
         // One stack per screen: popping after leaving the alternate screen would pop the main screen's
         // stack, which this program never pushed, and leave its own entry behind for the next program.
         let connection = RecordingConnection()
-        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: true)
+        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocol: .supported)
         try session.enter()
 
         session.leave()
@@ -72,7 +72,7 @@ struct TerminalSessionTests {
 
     @Test func `leaving ends a synchronized update the program left open`() throws {
         let connection = RecordingConnection()
-        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: true)
+        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocol: .supported)
         try session.enter()
         try connection.write(Array("\u{1b}[?2026h".utf8))  // a frame that never finished
 
@@ -84,7 +84,7 @@ struct TerminalSessionTests {
     @Test func `leaving twice writes and restores once`() throws {
         // The signal path and the normal path can both ask; the terminal must see one exit.
         let connection = RecordingConnection()
-        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: true)
+        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocol: .supported)
         try session.enter()
 
         session.leave()
@@ -96,14 +96,14 @@ struct TerminalSessionTests {
 
     @Test func `leaving a session that never entered touches nothing`() {
         let connection = RecordingConnection()
-        TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: true).leave()
+        TerminalSession(connection: connection, modes: everything, keyboardProtocol: .supported).leave()
 
         #expect(connection.calls.isEmpty)
     }
 
     @Test func `a terminal without the keyboard protocol is sent no keyboard flags`() throws {
         let connection = RecordingConnection()
-        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: false)
+        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocol: .unsupported)
 
         try session.enter()
 
@@ -114,10 +114,10 @@ struct TerminalSessionTests {
 
     @Test func `Escape is unambiguous only when disambiguation was pushed`() {
         let pushed = TerminalSession(
-            connection: RecordingConnection(), modes: everything, keyboardProtocolSupported: true)
+            connection: RecordingConnection(), modes: everything, keyboardProtocol: .supported)
         let legacy = TerminalSession(
             connection: RecordingConnection(), modes: TerminalModes(alternateScreen: true),
-            keyboardProtocolSupported: true)
+            keyboardProtocol: .supported)
 
         #expect(pushed.escapeIsUnambiguous)
         #expect(!legacy.escapeIsUnambiguous)
@@ -125,7 +125,7 @@ struct TerminalSessionTests {
 
     @Test func `a failed entry leaves raw mode again`() {
         let connection = RecordingConnection(failWrites: true)
-        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocolSupported: true)
+        let session = TerminalSession(connection: connection, modes: everything, keyboardProtocol: .supported)
 
         #expect(throws: TerminalError.writeFailed(5)) { try session.enter() }
         #expect(connection.calls.last == .restoreMode)
@@ -134,7 +134,7 @@ struct TerminalSessionTests {
     @Test func `run leaves every mode when its body returns`() async throws {
         let connection = RecordingConnection()
 
-        let value = try await TerminalSession.run(on: connection, modes: everything, keyboardProtocolSupported: true) {
+        let value = try await TerminalSession.run(on: connection, modes: everything, keyboardProtocol: .supported) {
             _ in 42
         }
 
@@ -148,7 +148,7 @@ struct TerminalSessionTests {
         let connection = RecordingConnection()
 
         await #expect(throws: Failure.self) {
-            try await TerminalSession.run(on: connection, modes: everything, keyboardProtocolSupported: true) { _ in
+            try await TerminalSession.run(on: connection, modes: everything, keyboardProtocol: .supported) { _ in
                 throw Failure()
             }
         }

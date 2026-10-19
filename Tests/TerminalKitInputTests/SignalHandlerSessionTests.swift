@@ -12,7 +12,7 @@ extension SignalHandlerTests {
     @Test func `SIGTERM leaves the terminal session from the signal thread`() async throws {
         let connection = RecordingConnection()
         let session = TerminalSession(
-            connection: connection, modes: .fullScreen, keyboardProtocolSupported: true)
+            connection: connection, modes: .fullScreen, keyboardProtocol: .supported)
         try session.enter()
         let probe = AsyncEventProbe<Int32>()
         let handler = SignalHandler(
