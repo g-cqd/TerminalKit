@@ -90,7 +90,8 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
         guard let source = provenance(atRow: row) else { return nil }
         let relative = col - source.col
         var offset = 0
-        if relative > 0 {
+        // The first cell (`relative == 0`) has a grapheme under it like any other; only a cell left of the text has none.
+        if relative >= 0 {
             let characters = source.text.count
             let under = TextDisplayMetrics.characterOffset(
                 forDisplayColumn: relative, in: source.text, tabSize: tabSize)
