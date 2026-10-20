@@ -61,10 +61,18 @@ and `TerminalIdentity` and `ClipboardWriter` (ADR-0028's rules as a plan the hos
 same and highlights what is visible at three scroll positions and three wrap widths. Position lookup 0.7 to 1.0 µs, highlight of a screen
 36 to 58 µs per frame while a selection exists.
 
+## What landed next (2026-10-20, diary 6)
+
+`TextWrap.rows` returns each row with its hard line and grapheme offset, from the same walk as `lines` (no measurable cost, allocations
+unchanged). `SelectionController` turns a press, a drag, a release and a click into a selection of content positions: the grapheme under
+both ends is included, a backward drag works, a wobble inside the pressed cell selects nothing, a drag at the first or last scrolling row asks
+the host to scroll, double and triple click select a word and a line. A drag step is 2.2 µs and allocates nothing. `ColumnSlicer` cuts a
+row's text at a highlight's columns so the host can style the middle.
+
 ## Still owed
 
-- **Painting the highlight** into `RenderPipeline`'s buffer, without making the diff redraw rows that did not change.
-- **The drag controller**: anchor and head edges, autoscroll past an edge (asking the host), what a click inside an existing selection does.
+- **Painting the highlight** into a screen without redrawing rows that did not change: the kit gives the spans and the slicer; the diff is the host composer's (ask's `ScreenComposer` keys rows by what they show).
+- What a click **inside** an existing selection does (the controller clears it; a drag-to-move is not designed).
 - **A selection across a fold or an image** (roadmap 0018), and what a copy contains then.
 - **A host recording provenance** as it draws: nothing does yet, in the kit or in ask, so this is untried against a real layout.
 - A real-terminal probe that drags across two blocks and reads the clipboard, and tmux, ssh and the primary selection.
