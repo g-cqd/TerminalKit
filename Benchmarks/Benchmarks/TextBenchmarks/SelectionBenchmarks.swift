@@ -68,6 +68,21 @@ func registerSelectionBenchmarks() {
             blackHole(map.highlights(of: selection, in: content))
             benchmark.stopMeasurement()
         }
+        // One motion event of a drag: the pointer's cell to the selection it makes.
+        Benchmark("selection/drag step \(name)", configuration: scaled) { benchmark in
+            var controller = SelectionController<Int>()
+            _ = controller.beginDrag(row: 1, col: 10, rows: map)
+            var changed = 0
+            benchmark.startMeasurement()
+            for index in 0 ..< perSample {
+                let update = controller.drag(
+                    row: 2 + index % 30, col: 2 + (index * 7) % 76, rows: map, scrollableRows: 0 ..< screenRows)
+                if update.changed { changed &+= 1 }
+            }
+            benchmark.stopMeasurement()
+            precondition(changed > 0, "no drag step changed the selection")
+            blackHole(controller.selection)
+        }
         Benchmark("selection/text \(name), 8 blocks", configuration: once) { benchmark in
             benchmark.startMeasurement()
             blackHole(selection.text(in: content))
