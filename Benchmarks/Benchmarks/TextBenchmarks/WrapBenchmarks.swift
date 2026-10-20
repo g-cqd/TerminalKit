@@ -29,6 +29,12 @@ func registerWrapBenchmarks() {
                 blackHole(TextWrap.lines(text, width: width))
                 benchmark.stopMeasurement()
             }
+            // The same wrap with each row's hard line and grapheme offset, which a selection needs (roadmap 0017).
+            Benchmark("wrap rows/\(name) at \(width)", configuration: configuration) { benchmark in
+                benchmark.startMeasurement()
+                blackHole(TextWrap.rows(text, width: width))
+                benchmark.stopMeasurement()
+            }
         }
     }
 }
