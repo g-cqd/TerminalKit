@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0016"]
 date: 2026-10-20
 decision: ADR-0027
@@ -47,6 +47,21 @@ to parse: 16 placements per frame added under 2 ms in the worst case (kitty p50 
 
 Images are also **rare in agent transcripts**: 0.06% of Claude Code and Codex messages and 0.58% of Pi's carry one (ask's
 `probe-ui-content-sizes.py`, counts only). That puts them last in the build order, behind code and thinking.
+
+## What landed (2026-10-20, ADR-0031)
+
+The fold model and the scroll rule, not the drawing: `FoldableBlock` and `FoldPlaceholder` (a block cannot be made without a placeholder),
+`FoldStore` (per block, with a default and a user's choice over it), and `ScrollAnchor` with `BlockHeights` (folding a block does not move the
+reader: the anchored row keeps its screen row, clamped at the ends, and an anchor inside a block that folded lands on its placeholder). 15
+tests including 500 random stacks and folds.
+
+## Still owed
+
+- **Images that belong to content**: transmitted once and cached by identity, placed at a block's cells, cropped at the viewport's edges,
+  sized to the cells, released with the block, and a placeholder where there is no graphics protocol. Probed only for parse cost (ADR-0028).
+- **Long code**: how a shown block scrolls sideways or wraps.
+- **Drawing a folded block** into the screen, and the click that toggles it (the click is roadmap 0016, nothing wires them yet).
+- **A selection or a copy across a fold or an image** (roadmap 0017).
 
 ## Done when
 
