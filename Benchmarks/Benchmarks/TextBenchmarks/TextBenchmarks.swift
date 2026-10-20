@@ -26,6 +26,7 @@ let benchmarks: @Sendable () -> Void = {
     )
 
     registerWrapBenchmarks()
+    registerSelectionBenchmarks()
     for (name, graphemes) in corpora {
         Benchmark("width/\(name)") { benchmark in
             benchmark.startMeasurement()
