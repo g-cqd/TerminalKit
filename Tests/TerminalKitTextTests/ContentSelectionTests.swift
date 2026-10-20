@@ -63,6 +63,30 @@ struct RowMapPositionTests {
         #expect(map.position(row: 0, col: 5, edge: .trailing)?.position == at("a", 0, 4))
     }
 
+    @Test func `the first cell of a row has a grapheme under it, so its trailing edge is after it`() {
+        // A drag backwards from the first column must include that column's grapheme.
+        let map = rowMap(for: sample, width: 20, scroll: 0, rows: 10, indent: 2)
+        #expect(map.position(row: 0, col: 2, edge: .trailing)?.position == at("a", 0, 1))
+        let flush = rowMap(for: sample, width: 20, scroll: 0, rows: 10)
+        #expect(flush.position(row: 0, col: 0, edge: .trailing)?.position == at("a", 0, 1))
+        let wide = rowMap(for: TestContent(blocks: [(id: "w", lines: ["日本"])]), width: 20, scroll: 0, rows: 3)
+        #expect(wide.position(row: 0, col: 0, edge: .trailing)?.position == at("w", 0, 1))
+        #expect(wide.position(row: 0, col: 1, edge: .trailing)?.position == at("w", 0, 1))
+    }
+
+    @Test func `left of the text has no grapheme under it, on either edge`() {
+        let map = rowMap(for: sample, width: 20, scroll: 0, rows: 10, indent: 2)
+        #expect(map.position(row: 0, col: 0, edge: .trailing)?.position == at("a", 0, 0))
+        #expect(map.position(row: 0, col: 1, edge: .trailing)?.position == at("a", 0, 0))
+    }
+
+    @Test func `an empty line has nothing under any cell`() {
+        let map = rowMap(for: sample, width: 20, scroll: 0, rows: 10)
+        // Block "c" line 1 is empty: rows are a0 a1 blank b blank c0 c1(empty) c2 ...
+        let empty = (0 ..< 10).first { map.provenance(atRow: $0)?.text == "" && map.provenance(atRow: $0)?.line == 1 }!
+        #expect(map.position(row: empty, col: 0, edge: .trailing)?.position == at("c", 1, 0))
+    }
+
     @Test func `left of the text is the start of the row and past its end is the end`() {
         let map = rowMap(for: sample, width: 20, scroll: 0, rows: 10, indent: 2)
         #expect(map.position(row: 0, col: 0)?.position == at("a", 0, 0))
