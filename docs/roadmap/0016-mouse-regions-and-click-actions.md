@@ -43,11 +43,14 @@ a mouse event, and ask does not enable the mode at all.
 - Pixel coordinates (`?1016`) for sub-cell targets such as a scrollbar thumb: worth it, or cell resolution enough?
 - Behaviour inside tmux and over ssh, where mouse reporting is filtered or translated.
 
-## Probe first
+## Probe (done, ADR-0028)
 
-In a real pty and in kitty, ghostty, wezterm and Terminal.app: which reports each emits for press, release, drag and wheel with
-`?1000 ?1002 ?1006` and `?1016`, what a held modifier does to them, and what the terminal does with its own selection while
-reporting is on. Evidence first, as with the reset ladder (ADR-0002).
+Run in kitty, Ghostty, WezTerm and Terminal.app with real OS-level events. Mouse reporting works in all four (click, drag, wheel).
+What the entry now has to design around: Shift is not reported in kitty, Ghostty and WezTerm (the terminal selects) but **is** in
+Terminal.app, whose bypass is fn; WezTerm omits the alt bit and Terminal.app omits the Command bit, so no click may depend on those
+modifiers; and the wheel arrives as a different number of reports per gesture in each terminal, so a report is one step and the
+host sets what a step scrolls. **Still unprobed:** tmux and ssh, hover (`?1003`), pixel coordinates (`?1016`), click counts, and a
+physical trackpad.
 
 ## Done when
 

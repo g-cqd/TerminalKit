@@ -39,11 +39,14 @@ frame and place again, skip a placement that falls under a popup, crop a tall on
 - Memory for transmitted images, and what to do with an image larger than the terminal.
 - Animated images, and images inside the input: out of scope until asked for.
 
-## Probe first
+## Probe (done, ADR-0028)
 
-Kitty graphics in kitty, ghostty and wezterm: the cost of re-placing a handful of images each frame during a scroll at 120 x 40,
-the behaviour of the source-rectangle crop, and what each does with an image taller than the screen. Then the allocation and time
-suites.
+Kitty graphics is answered by kitty, Ghostty and WezTerm, and **not by Terminal.app**, which gets the placeholder. Redrawing is cheap
+to parse: 16 placements per frame added under 2 ms in the worst case (kitty p50 0.94 to 2.62 ms; Ghostty 0.02 to 0.06; WezTerm
+3.89 to 4.00). **Drawing** cost, behaviour under a real scroll, and an image taller than the screen are still unmeasured.
+
+Images are also **rare in agent transcripts**: 0.06% of Claude Code and Codex messages and 0.58% of Pi's carry one (ask's
+`probe-ui-content-sizes.py`, counts only). That puts them last in the build order, behind code and thinking.
 
 ## Done when
 
