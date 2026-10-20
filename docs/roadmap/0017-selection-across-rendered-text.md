@@ -31,12 +31,13 @@ text on the clipboard. Whether it is copied on release is the host's setting (AD
    the text module has.
 6. **The copy.** The text of the selection as content, **not** as drawn: no padding, no separators, no right-aligned hints.
 
-## The clipboard
+## The clipboard (ADR-0028)
 
-OSC 52 is the default sink, behind a protocol so a host can use the system pasteboard instead. The kit emits "the selection was
-committed, here is its text"; whether that is copied automatically is the host's setting. A kitty read is declined or prompts,
-which is why the code already models an empty reply. Everything else about OSC 52 is **unprobed**: whether Terminal.app takes it,
-the largest payload each terminal accepts, the selection character (`c` or `p`), and tmux and ssh.
+A `ClipboardSink` writes the text. **OSC 52 is the default only where it was measured**: kitty, Ghostty and WezTerm take payloads up
+to 1 MB exactly. **Terminal.app ignores OSC 52 entirely**, so it needs the host's pasteboard (ask runs `pbcopy`), and a terminal the
+kit does not know gets both. **WezTerm drops the first write after a window opens**, so the first one is sent twice (to validate).
+The kit emits "the selection was committed, here is its text"; copying it automatically is the host's setting. A kitty read
+prompts, so reading is not used. The native selection returns with Shift (kitty, Ghostty, WezTerm) or fn (Terminal.app).
 
 ## Open questions
 
@@ -46,11 +47,10 @@ the largest payload each terminal accepts, the selection character (`c` or `p`),
   host's to supply (the kit cannot read content it did not draw).
 - Rectangular selection, and selecting inside the input (roadmap 0019).
 
-## Probe first
+## Probe (done, ADR-0028)
 
-The same four terminals: whether OSC 52 writes land on the clipboard (read it back with `pbpaste`), the payload ceiling, the
-bypass modifier for the terminal's native selection while reporting is on, and what happens in tmux. Record it as a table in
-an ADR, as ADR-0002 does for reset.
+OSC 52 writes, the payload ceiling (none found up to 1 MB) and the native-selection keys are measured. **Still unprobed:** tmux and
+ssh, the primary selection, and whether a physical drag selects the same way as the injected one.
 
 ## Done when
 
