@@ -40,6 +40,18 @@ struct FoldStoreTests {
         #expect(!store.isFolded("answer", default: false))
     }
 
+    @Test func `two stores are equal when they hold the same choices, so a host's state can be compared`() {
+        var one = FoldStore<String>()
+        var other = FoldStore<String>()
+        #expect(one == other)
+        one.set("a", folded: true)
+        #expect(one != other)
+        other.set("a", folded: true)
+        #expect(one == other)
+        other.set("a", folded: false)
+        #expect(one != other)
+    }
+
     @Test func `toggling flips what the block is now, and remembers it`() {
         var store = FoldStore<String>()
         #expect(store.toggle("t", default: true) == false)  // was folded by default, now shown
