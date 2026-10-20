@@ -43,6 +43,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Benchmark", package: "benchmark"),
                 "BenchmarkSupport",
+                .product(name: "TerminalKitCodecs", package: "TerminalKit"),
                 .product(name: "TerminalKitInput", package: "TerminalKit")
             ],
             path: "Benchmarks/InputBenchmarks",

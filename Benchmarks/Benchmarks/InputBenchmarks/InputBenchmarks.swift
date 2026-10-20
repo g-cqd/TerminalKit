@@ -1,5 +1,6 @@
 import Benchmark
 import BenchmarkSupport
+import TerminalKitCodecs
 import TerminalKitInput
 
 // Decoding cost per input event, through the router's public entry point.
@@ -47,5 +48,63 @@ let benchmarks: @Sendable () -> Void = {
             blackHole(router.feedAll(stream))
             benchmark.stopMeasurement()
         }
+    }
+
+    // Pointer recognition (roadmap 0016): the time per mouse report through the recognizer, with 120 regions on screen, about what
+    // a full screen of blocks and rows offers to point at. SequenceRouterAllocationTests' sibling holds the path to zero allocations.
+    var regions = RegionMap<Int>()
+    for index in 0 ..< 120 {
+        regions.add(index, at: CellRect(row: index % 40, col: (index / 40) * 26, rows: 1, cols: 26))
+    }
+    let pointerWorkloads: [(name: String, events: [MouseEvent])] = [
+        (
+            "click",
+            [
+                MouseEvent(button: .left, row: 20, col: 40, kind: .press),
+                MouseEvent(button: .left, row: 20, col: 40, kind: .release)
+            ]
+        ),
+        (
+            "drag",
+            [
+                MouseEvent(button: .left, row: 5, col: 5, kind: .press),
+                MouseEvent(button: .left, row: 6, col: 9, kind: .drag),
+                MouseEvent(button: .left, row: 9, col: 30, kind: .drag),
+                MouseEvent(button: .left, row: 12, col: 60, kind: .drag),
+                MouseEvent(button: .left, row: 12, col: 60, kind: .release)
+            ]
+        ),
+        ("wheel", [MouseEvent(button: .scrollDown, row: 20, col: 40, kind: .press)])
+    ]
+    for workload in pointerWorkloads {
+        var check = PointerRecognizer<Int>()
+        var produced = 0
+        for event in workload.events { check.handle(event, at: .now, in: regions) { _ in produced += 1 } }
+        // A benchmark that recognizes nothing measures nothing.
+        precondition(produced > 0, "pointer/\(workload.name): no pointer event")
+        let rounds = eventsPerSample / workload.events.count
+
+        Benchmark("pointer/\(workload.name)") { benchmark in
+            var recognizer = PointerRecognizer<Int>()
+            var emitted = 0
+            let now = ContinuousClock.now
+            benchmark.startMeasurement()
+            for _ in 0 ..< rounds {
+                for event in workload.events { recognizer.handle(event, at: now, in: regions) { _ in emitted &+= 1 } }
+            }
+            benchmark.stopMeasurement()
+            blackHole(emitted)
+        }
+    }
+
+    Benchmark("regions/hit (120 regions)") { benchmark in
+        var found = 0
+        benchmark.startMeasurement()
+        for index in 0 ..< eventsPerSample where regions.hit(row: index % 40, col: (index * 7) % 80) != nil {
+            found &+= 1
+        }
+        benchmark.stopMeasurement()
+        precondition(found > 0, "no cell found a region")
+        blackHole(found)
     }
 }
