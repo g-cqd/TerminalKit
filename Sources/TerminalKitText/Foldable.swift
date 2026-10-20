@@ -42,7 +42,7 @@ public struct FoldableBlock<ID: Hashable & Sendable>: Sendable, Equatable {
 ///
 /// Visibility is **per block, with a default** (the shape Pi uses, and the one ask's roadmap 0051 proposes), so one block can be
 /// opened without opening all, and a change of the default reaches every block the user has not chosen for.
-public struct FoldStore<ID: Hashable & Sendable>: Sendable {
+public struct FoldStore<ID: Hashable & Sendable>: Sendable, Equatable {
     private var choices: [ID: Bool] = [:]
 
     public init() {}
