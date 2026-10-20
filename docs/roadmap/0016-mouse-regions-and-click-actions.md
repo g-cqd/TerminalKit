@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-20
 decision: ADR-0027
@@ -51,6 +51,20 @@ Terminal.app, whose bypass is fn; WezTerm omits the alt bit and Terminal.app omi
 modifiers; and the wheel arrives as a different number of reports per gesture in each terminal, so a report is one step and the
 host sets what a step scrolls. **Still unprobed:** tmux and ssh, hover (`?1003`), pixel coordinates (`?1016`), click counts, and a
 physical trackpad.
+
+## What landed (2026-10-20, ADR-0029)
+
+`RegionMap` and `CellRect` (regions by host identity, layers, topmost wins), and `PointerRecognizer` (click with a count, drag,
+wheel step, one-based reports made zero-based once), in TerminalKitInput. 25 tests, including four real terminals' recorded byte
+streams replayed through the decoder and the recognizer, and an allocation ceiling of zero. Measured with 120 regions: a hit in
+119 ns, a click 345 ns, a drag 161 ns and a wheel step 230 ns per event, none allocating.
+
+## Still owed
+
+- **Using it:** a host registering regions as it composes a frame, and `RenderPipeline` or its composer protocol offering the place to
+  do it. Nothing consumes the recognizer yet, in the kit or in ask.
+- A keyboard path to the same action identity (open question above), hover, and a physical trackpad for the wheel.
+- tmux and ssh, which the probe did not run.
 
 ## Done when
 
