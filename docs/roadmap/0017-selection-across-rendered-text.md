@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0016"]
 date: 2026-10-20
 decision: ADR-0027
@@ -51,6 +51,23 @@ prompts, so reading is not used. The native selection returns with Shift (kitty,
 
 OSC 52 writes, the payload ceiling (none found up to 1 MB) and the native-selection keys are measured. **Still unprobed:** tmux and
 ssh, the primary selection, and whether a physical drag selects the same way as the injected one.
+
+## What landed (2026-10-20, ADR-0030)
+
+The model and the clipboard, in the kit and not yet in a screen: `ContentPosition`, `ContentSelection` and `SelectableContent` (a position is
+a block, a line and a grapheme offset; reading it back as content); `RowProvenance`, `RowMap`, `LocatedPosition` and `HighlightSpan` (a
+drawn row says where it came from, a cell maps back with `TextDisplayMetrics`, a highlight is spans of cells); word and line selection;
+and `TerminalIdentity` and `ClipboardWriter` (ADR-0028's rules as a plan the host performs). 40 tests, including that a selection reads the
+same and highlights what is visible at three scroll positions and three wrap widths. Position lookup 0.7 to 1.0 µs, highlight of a screen
+36 to 58 µs per frame while a selection exists.
+
+## Still owed
+
+- **Painting the highlight** into `RenderPipeline`'s buffer, without making the diff redraw rows that did not change.
+- **The drag controller**: anchor and head edges, autoscroll past an edge (asking the host), what a click inside an existing selection does.
+- **A selection across a fold or an image** (roadmap 0018), and what a copy contains then.
+- **A host recording provenance** as it draws: nothing does yet, in the kit or in ask, so this is untried against a real layout.
+- A real-terminal probe that drags across two blocks and reads the clipboard, and tmux, ssh and the primary selection.
 
 ## Done when
 
