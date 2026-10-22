@@ -47,7 +47,7 @@ let package = Package(
     dependencies: [
         // Pinned by revision, the mechanism the whole ecosystem uses — Aemi publishes no tags, and
         // Atelier has done it this way all along. The pin is current with Atelier's after ADR-0005.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "639caad90b0a8409185a712f32f9dea795e6470c")
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "08e7c649c013e43fad927e31c01cb7c925c50796")
     ],
     targets: [
         .target(
