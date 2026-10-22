@@ -1,8 +1,8 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-20
-decision: ADR-0027
+decision: ADR-0032
 ---
 
 # 0019 — A text input bounded in rows, scrolling inside itself
@@ -28,6 +28,15 @@ better code and the kit adopted it: here the kit has the primitive, and the host
 - **The wheel inside the input** scrolls it and not the transcript; **a click** places the cursor (roadmap 0016); **a selection**
   inside it uses roadmap 0017.
 - A scroll indicator for a clipped input, drawn without a row of its own.
+
+## What landed (2026-10-22, ADR-0032)
+
+`InputLayout` shares the hard-wrap and source-caret map: prefix reservation, wide/combined graphemes, tabs, controls, exact boundaries and
+safe tiny sizes. `InputViewport` caps display rows, keeps the source cursor visible, preserves the existing window where possible, and
+reports clipped rows for an indicator. Seventeen new tests, including generated geometry checks; 622 release tests pass. A fresh ~6 KB
+layout costs about 240 µs, cached mapping about 33 ns and viewport updates about 11 ns with no allocations (diary 2026-10-22 (1)).
+
+Host adoption, its clipping indicator, input mouse/wheel/selection and terminal verification remain owed.
 
 ## Open question
 
