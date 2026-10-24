@@ -556,6 +556,8 @@ public struct SequenceRouter: Sendable {
                 case 0x3b:
                     guard case .firstParam = field else { break parseLoop }
                     field = .modifier
+                    // One-based on the wire, but digits are appended to it as they arrive: starting from 1, `2` would read as 12.
+                    modifier = 0
                 case 0x3a:
                     guard case .modifier = field else { break parseLoop }
                     field = .eventType
