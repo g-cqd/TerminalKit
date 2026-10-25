@@ -106,7 +106,10 @@ struct PackedCell: Sendable, Equatable, BitwiseCopyable {
         let length = high & Self.lengthMask
         if high & Self.overflowFlag != 0 { return GraphemeTable.character(UInt32(truncatingIfNeeded: low)) }
         // SAFETY: the eight bytes of a local value, of which the first `length` (at most eight) are read.
+        // The length is that of a whole grapheme: `init(character:width:styleID:)` stores one in eight bytes or
+        // fewer, or none of it (a longer one goes to `GraphemeTable`), so the cut is on a character boundary.
         let string = withUnsafeBytes(of: low.littleEndian) { raw in
+            // @fc:accept cut-then-decode -- the cut is the stored grapheme's own length
             unsafe String(decoding: raw.prefix(Int(length)), as: UTF8.self)
         }
         return string.first ?? " "
