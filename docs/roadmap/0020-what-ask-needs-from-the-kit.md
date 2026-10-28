@@ -38,3 +38,8 @@ their own "Still owed" lists; this one adds what they do not carry.
 
 Each row above has either a probe-backed verdict recorded in the kit's diary or a built and tested change, and the ask entry that
 waited names the result.
+
+## Update (2026-10-28, from ask 0095)
+
+- Make the forward Delete key (and Insert) public in `Key` (`delete = 57349`, `insert = 57348`). `FunctionalKeyCode` is private to
+  `SequenceRouter`, so ask names 57349 itself (`PromptEditor.forwardDelete`).
