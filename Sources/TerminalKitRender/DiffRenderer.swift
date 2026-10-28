@@ -68,9 +68,7 @@ public enum DiffRenderer: Sendable {
         }
 
         // Reset style at end
-        if lastStyle.style != .default {
-            SGREncoder.appendReset(to: &bytes)
-        }
+        lastStyle.finish(into: &bytes)
     }
 
     /// Renders the entire buffer unconditionally, ignoring the dirty tracker.
@@ -108,9 +106,7 @@ public enum DiffRenderer: Sendable {
             realign = false
         }
 
-        if lastStyle.style != .default {
-            SGREncoder.appendReset(to: &bytes)
-        }
+        lastStyle.finish(into: &bytes)
     }
 
     /// Writes the unchanged cells `start ..< end` of `row` again when that is shorter than moving the cursor
@@ -154,9 +150,29 @@ public enum DiffRenderer: Sendable {
         mutating func move(to newID: UInt32, into bytes: inout ContiguousArray<UInt8>) {
             guard newID != id else { return }
             let newStyle = StyleTable.style(newID)
-            SGREncoder.encodeDiff(from: style, to: newStyle, into: &bytes)
+            var from = style
+            var to = newStyle
+            from.link = nil
+            to.link = nil
+            if from != to { SGREncoder.encodeDiff(from: from, to: to, into: &bytes) }
+            if newStyle.link != style.link { Self.appendLink(newStyle.link, to: &bytes) }
             id = newID
             style = newStyle
+        }
+
+        /// Ends the frame with the terminal in the default style and no open link.
+        mutating func finish(into bytes: inout ContiguousArray<UInt8>) {
+            if style.link != nil { Self.appendLink(nil, to: &bytes) }
+            var plain = style
+            plain.link = nil
+            if plain != .default { SGREncoder.appendReset(to: &bytes) }
+        }
+
+        /// OSC 8: opens the link, or closes the open one when `uri` is nil or unsafe.
+        private static func appendLink(_ uri: String?, to bytes: inout ContiguousArray<UInt8>) {
+            bytes.append(contentsOf: [0x1B, 0x5D, 0x38, 0x3B, 0x3B])
+            if let uri, Style.isSafeLink(uri) { bytes.append(contentsOf: uri.utf8) }
+            bytes.append(contentsOf: [0x1B, 0x5C])
         }
     }
 

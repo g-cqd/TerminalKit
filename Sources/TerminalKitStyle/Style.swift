@@ -31,6 +31,17 @@ public struct Style: Sendable, Equatable, Hashable {
     public var underline: UnderlineStyle
     public var strikethrough: Bool
     public var inverse: Bool
+    /// A hyperlink (OSC 8) the cell belongs to, as an absolute URI such as `file:///Users/me/a.swift`.
+    ///
+    /// A URI with a control character, a space or a non-ASCII byte is never sent to the terminal (see
+    /// ``isSafeLink(_:)``): percent-encode it first.
+    public var link: String?
+
+    /// Whether `uri` may be written inside an OSC 8 sequence: printable ASCII only, no space, so no byte in it can end
+    /// the sequence early or start another.
+    public static func isSafeLink(_ uri: String) -> Bool {
+        !uri.isEmpty && uri.utf8.allSatisfy { $0 > 0x20 && $0 < 0x7F }
+    }
 
     public static let `default` = Style()
 
@@ -43,7 +54,8 @@ public struct Style: Sendable, Equatable, Hashable {
         italic: Bool = false,
         underline: UnderlineStyle = .none,
         strikethrough: Bool = false,
-        inverse: Bool = false
+        inverse: Bool = false,
+        link: String? = nil
     ) {
         self.fg = fg
         self.bg = bg
@@ -54,5 +66,6 @@ public struct Style: Sendable, Equatable, Hashable {
         self.underline = underline
         self.strikethrough = strikethrough
         self.inverse = inverse
+        self.link = link
     }
 }
