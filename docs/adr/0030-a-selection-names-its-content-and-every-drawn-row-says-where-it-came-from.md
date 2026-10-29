@@ -62,3 +62,12 @@ nothing of the screen. This decides the model that does.
 How the highlight is painted into `RenderPipeline`'s buffer, the drag controller (anchor and head edges, autoscroll past an edge, and
 a click inside an existing selection), a selection across a folded block or an image (roadmap 0018), how a layout layer should record
 provenance cheaply, and keyboard selection.
+
+## Amended 2026-10-29: a row of several segments
+
+A row of rendered Markdown (ADR 0033) shows several stretches of its source, with markers hidden and chrome added between them, and a soft
+break joins two source lines on one row. `RowProvenance.segments` lists them (`RowSegment`: line, first offset, column, drawn text, and how
+many graphemes of source it shows); the original fields are the first segment, so a plain row is unchanged. A segment whose drawn text is as
+long as its source maps cell to grapheme; one that is not (a decoded entity, a tab drawn as spaces) is atomic. A highlight paints the chrome
+between two segments only when the selection runs through both. The content is still the source, so a selection copies the Markdown it
+spans, markers included, which is what ask decided (its roadmap 0065).

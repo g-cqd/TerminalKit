@@ -14,6 +14,8 @@ public struct RowProvenance<BlockID: Hashable & Sendable>: Sendable, Equatable {
     public var col: Int
     /// What was drawn on this row from the line: only its graphemes, not any padding or hint beside them.
     public var text: String
+    /// Every stretch of content the row shows, left to right and in content order; the fields above are the first. A plain row has one.
+    public var segments: [RowSegment]
 
     public init(block: BlockID, ordinal: Int, line: Int, firstOffset: Int, col: Int, text: String) {
         self.block = block
@@ -22,6 +24,20 @@ public struct RowProvenance<BlockID: Hashable & Sendable>: Sendable, Equatable {
         self.firstOffset = firstOffset
         self.col = col
         self.text = text
+        segments = [RowSegment(line: line, firstOffset: firstOffset, col: col, text: text)]
+    }
+
+    /// A row of several segments, such as one of rendered Markdown. `segments` must not be empty, and must go left to right and forward in the
+    /// content.
+    public init(block: BlockID, ordinal: Int, segments: [RowSegment]) {
+        let first = segments.first ?? RowSegment(line: 0, firstOffset: 0, col: 0, text: "")
+        self.block = block
+        self.ordinal = ordinal
+        line = first.line
+        firstOffset = first.firstOffset
+        col = first.col
+        text = first.text
+        self.segments = segments.isEmpty ? [first] : segments
     }
 }
 
@@ -88,16 +104,21 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
         BlockID
     >? {
         guard let source = provenance(atRow: row) else { return nil }
-        let relative = col - source.col
+        // The segment the cell is in or after; a cell left of the first is its start.
+        let segment = source.segments.last { $0.col <= col } ?? source.segments[0]
+        let relative = col - segment.col
         var offset = 0
         // The first cell (`relative == 0`) has a grapheme under it like any other; only a cell left of the text has none.
-        if relative >= 0 {
-            let characters = source.text.count
+        if relative >= 0, segment.isLinear {
+            let characters = segment.text.count
             let under = TextDisplayMetrics.characterOffset(
-                forDisplayColumn: relative, in: source.text, tabSize: tabSize)
+                forDisplayColumn: relative, in: segment.text, tabSize: tabSize)
             offset = edge == .trailing && under < characters ? under + 1 : under
+        } else if relative >= 0 {
+            let past = relative >= TextDisplayMetrics.displayWidth(of: segment.text, tabSize: tabSize)
+            offset = edge == .trailing || past ? segment.sourceCount : 0
         }
-        let position = ContentPosition(block: source.block, line: source.line, offset: source.firstOffset + offset)
+        let position = ContentPosition(block: source.block, line: segment.line, offset: segment.firstOffset + offset)
         return LocatedPosition(position: position, ordinal: source.ordinal)
     }
 
@@ -115,8 +136,8 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
                 return LocatedPosition(position: position, ordinal: below.ordinal)
             }
             if let above = provenance(atRow: row - distance) {
-                let position = ContentPosition(
-                    block: above.block, line: above.line, offset: above.firstOffset + above.text.count)
+                let last = above.segments[above.segments.count - 1]
+                let position = ContentPosition(block: above.block, line: last.line, offset: last.endOffset)
                 return LocatedPosition(position: position, ordinal: above.ordinal)
             }
             distance += 1
@@ -135,23 +156,47 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
         var spans: [HighlightSpan] = []
         for (row, entry) in rows.enumerated() {
             guard let source = entry else { continue }
-            let here = (source.ordinal, source.line)
-            guard here >= (start.ordinal, start.line), here <= (end.ordinal, end.line) else { continue }
-            let rowEnd = source.firstOffset + source.text.count
-            let from = here == (start.ordinal, start.line) ? max(source.firstOffset, start.offset) : source.firstOffset
-            let to = here == (end.ordinal, end.line) ? min(rowEnd, end.offset) : rowEnd
-            guard from < to else { continue }
-            let startCol =
-                source.col
-                + TextDisplayMetrics.displayColumn(
-                    forCharacterOffset: from - source.firstOffset, in: source.text, tabSize: tabSize)
-            let endCol =
-                source.col
-                + TextDisplayMetrics.displayColumn(
-                    forCharacterOffset: to - source.firstOffset, in: source.text, tabSize: tabSize)
-            if endCol > startCol { spans.append(HighlightSpan(row: row, startCol: startCol, endCol: endCol)) }
+            // Whether the previous segment of this row is selected to its end, so the cells between it and the next are too.
+            var selectedToEnd = false
+            for segment in source.segments {
+                let here = (source.ordinal, segment.line)
+                guard here >= (start.ordinal, start.line), here <= (end.ordinal, end.line) else {
+                    selectedToEnd = false
+                    continue
+                }
+                let from =
+                    here == (start.ordinal, start.line) ? max(segment.firstOffset, start.offset) : segment.firstOffset
+                let to = here == (end.ordinal, end.line) ? min(segment.endOffset, end.offset) : segment.endOffset
+                guard from < to else {
+                    selectedToEnd = false
+                    continue
+                }
+                let cols = Self.columns(of: segment, from: from, to: to, tabSize: tabSize)
+                if selectedToEnd, from == segment.firstOffset, let last = spans.last, last.row == row {
+                    spans[spans.count - 1].endCol = Swift.max(last.endCol, cols.upperBound)
+                } else if !cols.isEmpty {
+                    spans.append(HighlightSpan(row: row, startCol: cols.lowerBound, endCol: cols.upperBound))
+                }
+                selectedToEnd = to == segment.endOffset
+            }
         }
         return spans
+    }
+
+    /// The cells of `segment` that show offsets `from` to `to`: those of the graphemes for a linear segment, all of it for an atomic one.
+    private static func columns(of segment: RowSegment, from: Int, to: Int, tabSize: Int) -> Range<Int> {
+        guard segment.isLinear else {
+            return segment.col ..< segment.col + TextDisplayMetrics.displayWidth(of: segment.text, tabSize: tabSize)
+        }
+        let startCol =
+            segment.col
+            + TextDisplayMetrics.displayColumn(
+                forCharacterOffset: from - segment.firstOffset, in: segment.text, tabSize: tabSize)
+        let endCol =
+            segment.col
+            + TextDisplayMetrics.displayColumn(
+                forCharacterOffset: to - segment.firstOffset, in: segment.text, tabSize: tabSize)
+        return startCol ..< Swift.max(startCol, endCol)
     }
 }
 
