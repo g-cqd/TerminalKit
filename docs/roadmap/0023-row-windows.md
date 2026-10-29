@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -37,7 +37,29 @@ Tests: `WindowedLayoutTests` (windows anywhere equal the whole document, far ite
 
 Measured in ask (release build, interleaved A/B, 3 to 4 runs each, a copy of the owner's 12 MB session, 5,564 entries, 120x40, loaded
 machine): resident size 61.2 to 54.9 MiB; open 545-664 to 504-636 ms; a new width 302-354 to 225-254 ms; typing and Page Up under 1 ms
-both. A fresh screen: 14.3 MiB either way. The bound, measured by laying out only the last 50 items: 52.6 MiB and 258 ms to open.
+both (that Page Up figure is void: in that harness the key did not scroll, see step 2). A fresh screen: 14.3 MiB either way. The bound, measured by laying out only the last 50 items: 52.6 MiB and 258 ms to open.
 
-Next: heights found from the end on demand, so opening and a new width lay out only what is shown and the rows below the window are exact
-while the total above it is an estimate refined as the window moves up.
+## Step 2 (2026-10-29): laid out from the end, on demand
+
+Positions count from the document's end, as a transcript that follows its end does. `update(width:revisions:keepingFromEnd:layout:)` knows
+the heights of the last items only, as far up as `keepingFromEnd` rows need; `lines(fromEnd:rows:layout:)` reaches further up as a window
+moves there, and lets go of the lines of held items farther than the margin. A new width forgets every height and lays out from the end
+again, so opening and a resize cost the rows on screen and a margin, not the document. Starts are kept in a coordinate that neither appending
+nor reaching back moves, so a window is found by binary search and a frame touches the held items only. `rowCount` is the rows of the items
+known: exact below any window, the whole document once `isComplete` (at the top). Tests: `WindowedLayoutTests`, 11, among them 2,000 seeded
+random steps (edits, appends, cuts, widths, margins, windows) against the whole document.
+
+Measured in ask (release build, a copy of the owner's 12 MB session, 5,564 entries, 120x40, interleaved against the full layout, 2 x 3 runs,
+loaded machine; both builds carry ask's fix that lets Page Up scroll before any mouse event):
+
+| | full layout | from the end |
+| --- | --- | --- |
+| resident size, open and quiet | 60.9 MiB | 52.7 MiB |
+| open (spawn to the quiet first frame) | 439-442 ms | 229-230 ms |
+| a new width, 120 to 100 columns, 30 pages up | 231 ms | 15-18 ms |
+| a typed byte | 1.0-1.3 ms | 0.9-1.3 ms |
+| Page Up, median of 30 (worst) | 1.3 ms (1.5-1.9) | 2.5 ms (3.5-5.9) |
+| fresh screen, resident size | 14.3 MiB | 14.3 MiB |
+
+A Page Up costs about 1.2 ms more: it lays out the page of items it reaches, which the full layout paid at open. Paged to the top, both
+builds draw the same screen with the same 16,148 rows below it. Done: ask uses it, and resident size fell 61.2 to 52.7 MiB over both steps.
