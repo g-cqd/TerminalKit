@@ -24,6 +24,7 @@ Requires Swift 6.4 and macOS 26. Kernel utilities come from Aemi at the revision
 | `TerminalKitInput` | Input routing, streams, signals, and terminal sessions (modes entered and left as a unit) |
 | `TerminalKitText` | Rope, text operations and display metrics |
 | `TerminalKitRender` | Screen buffers, frame differences and output |
+| `TerminalKitMarkdown` | Markdown documents drawn as styled rows, per block (links AemiMarkdown) |
 | `TerminalKitTestSupport` | Terminal model and measurement helpers |
 | `TerminalKit` | Core re-export; excludes test support |
 

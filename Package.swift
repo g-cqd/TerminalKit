@@ -40,6 +40,8 @@ let package = Package(
         .library(name: "TerminalKitCodecs", targets: ["TerminalKitCodecs"]),
         .library(name: "TerminalKitRender", targets: ["TerminalKitRender"]),
         .library(name: "TerminalKitInput", targets: ["TerminalKitInput"]),
+        // A Markdown document drawn as styled rows. Its own product, so a host that draws no Markdown does not link the parser.
+        .library(name: "TerminalKitMarkdown", targets: ["TerminalKitMarkdown"]),
         // Umbrella — re-exports the core. Test support stays out, so shipping code never links the
         // oracle by accident.
         .library(name: "TerminalKit", targets: ["TerminalKit"])
@@ -47,7 +49,9 @@ let package = Package(
     dependencies: [
         // Pinned by revision, the mechanism the whole ecosystem uses — Aemi publishes no tags, and
         // Atelier has done it this way all along. The pin is current with Atelier's after ADR-0005.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "f6da05cd0efdf60700e854efb5b6092eae89b8c5")
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "f6da05cd0efdf60700e854efb5b6092eae89b8c5"),
+        // The parser `TerminalKitMarkdown` draws (roadmap 0022); it pins the same Aemi revision as above.
+        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "2e75a94af21a4e942e9478d42c788458ac97bc95")
     ],
     targets: [
         .target(
@@ -97,6 +101,13 @@ let package = Package(
             path: "Sources/TerminalKitText",
             swiftSettings: strictSettings),
         .target(
+            name: "TerminalKitMarkdown",
+            dependencies: [
+                "TerminalKitText", "TerminalKitStyle", .product(name: "AemiMarkdown", package: "AemiMarkdown")
+            ],
+            path: "Sources/TerminalKitMarkdown",
+            swiftSettings: strictSettings),
+        .target(
             name: "TerminalKit",
             dependencies: ["TerminalKitCore"],
             path: "Sources/TerminalKit",
@@ -141,6 +152,15 @@ let package = Package(
             name: "TerminalKitTextTests",
             dependencies: ["TerminalKitText"],
             path: "Tests/TerminalKitTextTests",
+            swiftSettings: strictSettings
+        ),
+        .testTarget(
+            name: "TerminalKitMarkdownTests",
+            dependencies: [
+                "TerminalKitMarkdown", "TerminalKitStyle", "TerminalKitText",
+                .product(name: "AemiMarkdown", package: "AemiMarkdown")
+            ],
+            path: "Tests/TerminalKitMarkdownTests",
             swiftSettings: strictSettings
         ),
         .testTarget(

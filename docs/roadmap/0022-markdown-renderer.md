@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -34,3 +34,26 @@ Still not there: a source byte range per block, and a revision for the open bloc
 node); keep one walker and `restart(at:in:)` it per block and a walk allocates nothing once warm (AemiMarkdown `3308985`, allocation suite). A block
 source range is deferred until this renderer asks for one (AemiMarkdown ADR-0002); the leaves' ranges cover row-to-source mapping.
 
+
+## Built (2026-10-29)
+
+The `TerminalKitMarkdown` product, pinning AemiMarkdown `2e75a94` (same Aemi revision as the kit). Decisions in ADR 0033.
+
+- `MarkdownRenderer.lines(of:in:width:)` lays out one top-level block into `StyledLine`s (runs of text, `Style`, and the source bytes each
+  run shows; chrome has none). A final block's rows depend on the block and the width only, so a host keys them by `MarkdownBlock.id` and lays
+  out only the open block again as an answer streams; a test streams a document 5 bytes at a time and checks exactly that.
+- Paragraphs and headings wrap like `TextWrap` (a test compares them at seven widths); quotes and alerts take a bar, list items a marker then
+  its width, footnote definitions their label; a prefix never takes more than half the row. Code blocks keep their lines after a gutter, tabs
+  to stops of four, cut at the width; a `MarkdownCodeHighlighter` the host gives colours them (no lexer dependency). Tables take natural
+  widths, then shared widths with cells wrapped, then a `header: value` record per row.
+- Links through a `MarkdownLinks` policy: an OSC 8 hyperlink only for an allowed scheme (http, https, mailto) or what `resolve` maps a path to,
+  printable ASCII only; the target written after the text when the text names another host (`whenMisleading`, the default).
+- Control graphemes are never drawn (ESC in a model's answer stays inert); entities show decoded over their source bytes.
+
+Properties over 13 hand-written and 150 seeded random documents at every width 1 to 100: no row wider than the width (a wide grapheme at width
+1 excepted), every printable source byte of text, HTML, code, entities and footnote labels shown by some run, every run's text its source as
+written or decoded, and a reused renderer equal to a fresh one. Cost in release: 0.9 ms to lay out a 17 KB document (77 blocks, three of the
+repository READMEs) at one width, 55 µs for its largest block.
+
+Not done: images are their alt text in brackets (roadmap 0018 is the real thing); math is shown as written in the code style;
+ask's integration is its roadmap 0065.
