@@ -10,11 +10,13 @@ struct InlineCollector {
     private var codeDepth = 0
     private let theme: MarkdownTheme
     private let policy: MarkdownLinks
+    private let softBreaks: SoftBreaks
 
-    init(base: Style, theme: MarkdownTheme, links: MarkdownLinks) {
+    init(base: Style, theme: MarkdownTheme, links: MarkdownLinks, softBreaks: SoftBreaks) {
         styles = [base]
         self.theme = theme
         policy = links
+        self.softBreaks = softBreaks
     }
 
     private var style: Style { styles[styles.count - 1] }
@@ -63,8 +65,8 @@ struct InlineCollector {
                     Piece(
                         text: Self.string(document.decode(node.range)), style: style, source: node.range,
                         isVerbatim: false))
-            case .softBreak: chrome(" ", style)
-            case .hardBreak:
+            case .softBreak where softBreaks == .space || codeDepth > 0: chrome(" ", style)
+            case .softBreak, .hardBreak:
                 pieces.append(
                     codeDepth > 0 ? Piece(text: " ", style: style, source: nil, isVerbatim: false) : .lineBreak())
             case .taskMarker: chrome(node.payload == 1 ? "[x] " : "[ ] ", theme.marker)

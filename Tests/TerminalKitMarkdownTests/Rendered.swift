@@ -6,9 +6,10 @@ enum Rendered {
     static func document(_ markdown: String) -> MarkdownDocument { MarkdownParser.parse(Array(markdown.utf8)) }
 
     static func lines(
-        _ markdown: String, width: Int = 80, theme: MarkdownTheme = .plain, links: MarkdownLinks = MarkdownLinks()
+        _ markdown: String, width: Int = 80, theme: MarkdownTheme = .plain, links: MarkdownLinks = MarkdownLinks(),
+        softBreaks: SoftBreaks = .space
     ) -> [StyledLine] {
-        var renderer = MarkdownRenderer(theme: theme, links: links)
+        var renderer = MarkdownRenderer(theme: theme, links: links, softBreaks: softBreaks)
         return renderer.lines(of: document(markdown), width: width)
     }
 

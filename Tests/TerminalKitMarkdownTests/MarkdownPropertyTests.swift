@@ -42,11 +42,12 @@ struct MarkdownPropertyTests {
     }
 
     /// Each printable ASCII byte that is not a space, in a leaf whose text the reader should see, is shown by some run.
-    @Test func `every printable byte of the source text is shown, in every row no wider than the width`() {
+    @Test(arguments: [SoftBreaks.space, .lineBreak])
+    func `every printable byte of the source text is shown, in every row no wider than the width`(breaks: SoftBreaks) {
         for markdown in Self.corpus + Self.randomDocuments() {
             let document = Rendered.document(markdown)
             let expected = Self.visibleBytes(document)
-            var renderer = MarkdownRenderer()
+            var renderer = MarkdownRenderer(softBreaks: breaks)
             for width in 1 ... 100 {
                 let lines = renderer.lines(of: document, width: width)
                 var shown = Set<Int>()

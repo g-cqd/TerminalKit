@@ -21,17 +21,20 @@ public struct MarkdownRenderer: Sendable {
     public var links: MarkdownLinks
     /// Colours fenced code by its language, or nil to draw code in the theme's code style.
     public var highlighter: (any MarkdownCodeHighlighter)?
+    /// What a line end inside a paragraph becomes; a space, as CommonMark says, by default.
+    public var softBreaks: SoftBreaks
     /// One walker for every block, so a walk allocates nothing for its stacks once they are as deep as the deepest block.
     private var walker: MarkdownEvents?
 
-    /// A renderer of `theme`, `links` and `highlighter`.
+    /// A renderer of `theme`, `links`, `highlighter` and `softBreaks`.
     public init(
         theme: MarkdownTheme = .standard, links: MarkdownLinks = MarkdownLinks(),
-        highlighter: (any MarkdownCodeHighlighter)? = nil
+        highlighter: (any MarkdownCodeHighlighter)? = nil, softBreaks: SoftBreaks = .space
     ) {
         self.theme = theme
         self.links = links
         self.highlighter = highlighter
+        self.softBreaks = softBreaks
     }
 
     /// The rows of `block`, at most `width` columns wide.
@@ -52,7 +55,9 @@ public struct MarkdownRenderer: Sendable {
         } else {
             events = document.events(of: block)
         }
-        var writer = BlockWriter(theme: theme, links: links, highlighter: highlighter, width: width, document: document)
+        var writer = BlockWriter(
+            theme: theme, links: links, highlighter: highlighter, softBreaks: softBreaks, width: width,
+            document: document)
         while let event = events.next() { writer.handle(event) }
         walker = events
         return writer.lines.isEmpty ? [StyledLine()] : writer.lines

@@ -20,6 +20,13 @@ struct MarkdownBlockTests {
             ])
     }
 
+    @Test func `with soft breaks as line breaks, a paragraph keeps its writer's lines, but a code span does not`() {
+        let lines = Rendered.lines("one\ntwo `a\nb`\n**three\nfour**\n", width: 20, softBreaks: .lineBreak)
+        #expect(lines.map(\.text) == ["one", "two a b", "three", "four"])
+        #expect(lines.flatMap(\.runs).compactMap(\.source).allSatisfy { !$0.isEmpty })
+        #expect(Rendered.lines("- a\n  b\n", softBreaks: .lineBreak).map(\.text) == ["• a", "  b"])
+    }
+
     @Test func `quotes put a bar before each row, nested quotes one per level, and an alert names itself`() {
         #expect(Rendered.rows("> a b c d e f\n>\n> > inner\n", width: 9) == ["│ a b c d", "│ e f", "│", "│ │ inner"])
         #expect(Rendered.rows("> [!WARNING]\n> careful\n") == ["│ Warning", "│ careful"])

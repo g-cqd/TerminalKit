@@ -22,6 +22,7 @@ struct BlockWriter {
     let theme: MarkdownTheme
     let links: MarkdownLinks
     let highlighter: (any MarkdownCodeHighlighter)?
+    let softBreaks: SoftBreaks
     let width: Int
     let document: MarkdownDocument
     private(set) var lines: [StyledLine] = []
@@ -37,12 +38,13 @@ struct BlockWriter {
     private var table: TableBuilder?
 
     init(
-        theme: MarkdownTheme, links: MarkdownLinks, highlighter: (any MarkdownCodeHighlighter)?, width: Int,
-        document: MarkdownDocument
+        theme: MarkdownTheme, links: MarkdownLinks, highlighter: (any MarkdownCodeHighlighter)?, softBreaks: SoftBreaks,
+        width: Int, document: MarkdownDocument
     ) {
         self.theme = theme
         self.links = links
         self.highlighter = highlighter
+        self.softBreaks = softBreaks
         self.width = Swift.max(1, width)
         self.document = document
     }
@@ -249,7 +251,9 @@ struct BlockWriter {
         for row in RowWrap(pieces).rows(width: contentWidth, breaksAnywhere: breaksAnywhere) { emit(row) }
     }
 
-    private func collector(_ base: Style) -> InlineCollector { InlineCollector(base: base, theme: theme, links: links) }
+    private func collector(_ base: Style) -> InlineCollector {
+        InlineCollector(base: base, theme: theme, links: links, softBreaks: softBreaks)
+    }
 
     static func spaces(_ count: Int) -> StyledRun { StyledRun(String(repeating: " ", count: count), style: .default) }
 }

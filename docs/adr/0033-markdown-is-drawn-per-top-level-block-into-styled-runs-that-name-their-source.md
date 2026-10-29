@@ -28,10 +28,12 @@ identities and finality, and an event walk of one block with a byte range on eve
 - Tables fit the width by a fixed rule: natural widths; else at least the longest word, spare shared in proportion; else one record per row.
   A table is never cut at the edge.
 - Code is coloured through `MarkdownCodeHighlighter`, a protocol the host implements; the kit links no lexer.
+- A soft break is a space by default, as CommonMark says. `softBreaks: .lineBreak` makes it a new row (still a space inside a code span), for
+  a chat transcript, where a model that ends a line means a new one.
 
 ## Consequences
 
-The rows of a block are a pure function of the block's events, theme, link policy, highlighter and width, which is what the property tests
+The rows of a block are a pure function of the block's events, theme, link policy, highlighter, soft-break choice and width, which is what the property tests
 check. A theme change or a policy change means laying out again; a host keys its cache by them too. Spacing between top-level blocks is the
 host's (`lines(of:width:)` puts one blank row), so a transcript can choose its own.
 
