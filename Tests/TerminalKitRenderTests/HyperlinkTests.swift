@@ -31,4 +31,24 @@ struct HyperlinkTests {
     @Test func `unlinked output has no OSC 8 at all`() {
         #expect(!render(nil).contains("\u{1B}]8"))
     }
+
+    @Test func `a link with an id says so, so two runs of one URI are two links`() {
+        var buffer = ScreenBuffer(columns: 20, rows: 1)
+        buffer.write("ab", row: 0, col: 0, style: Style(link: "file:///x", linkID: "b3-0"))
+        buffer.write(" ", row: 0, col: 2, style: .default)
+        buffer.write("ab", row: 0, col: 3, style: Style(link: "file:///x", linkID: "b3-1"))
+        let output = String(decoding: DiffRenderer.renderFull(buffer), as: UTF8.self)
+        #expect(
+            output.contains(
+                "\u{1B}]8;id=b3-0;file:///x\u{1B}\\ab\u{1B}]8;;\u{1B}\\ \u{1B}]8;id=b3-1;file:///x\u{1B}\\ab"))
+    }
+
+    @Test func `an id that could end the sequence is left out, and the link kept`() {
+        for bad in ["a;b", "a:b", "a b", "a\u{1B}", "é", ""] {
+            var buffer = ScreenBuffer(columns: 20, rows: 1)
+            buffer.write("ab", row: 0, col: 0, style: Style(link: "file:///x", linkID: bad))
+            let output = String(decoding: DiffRenderer.renderFull(buffer), as: UTF8.self)
+            #expect(output.contains("\u{1B}]8;;file:///x\u{1B}\\ab"), "\(bad.debugDescription)")
+        }
+    }
 }

@@ -154,24 +154,35 @@ public enum DiffRenderer: Sendable {
             var to = newStyle
             from.link = nil
             to.link = nil
+            from.linkID = nil
+            to.linkID = nil
             if from != to { SGREncoder.encodeDiff(from: from, to: to, into: &bytes) }
-            if newStyle.link != style.link { Self.appendLink(newStyle.link, to: &bytes) }
+            if newStyle.link != style.link || newStyle.link != nil && newStyle.linkID != style.linkID {
+                Self.appendLink(newStyle.link, id: newStyle.linkID, to: &bytes)
+            }
             id = newID
             style = newStyle
         }
 
         /// Ends the frame with the terminal in the default style and no open link.
         mutating func finish(into bytes: inout ContiguousArray<UInt8>) {
-            if style.link != nil { Self.appendLink(nil, to: &bytes) }
+            if style.link != nil { Self.appendLink(nil, id: nil, to: &bytes) }
             var plain = style
             plain.link = nil
+            plain.linkID = nil
             if plain != .default { SGREncoder.appendReset(to: &bytes) }
         }
 
-        /// OSC 8: opens the link, or closes the open one when `uri` is nil or unsafe.
-        private static func appendLink(_ uri: String?, to bytes: inout ContiguousArray<UInt8>) {
-            bytes.append(contentsOf: [0x1B, 0x5D, 0x38, 0x3B, 0x3B])
-            if let uri, Style.isSafeLink(uri) { bytes.append(contentsOf: uri.utf8) }
+        /// OSC 8: opens the link, with its `id` when it has a safe one, or closes the open one when `uri` is nil or unsafe.
+        private static func appendLink(_ uri: String?, id: String?, to bytes: inout ContiguousArray<UInt8>) {
+            bytes.append(contentsOf: [0x1B, 0x5D, 0x38, 0x3B])
+            let safe = uri.flatMap { Style.isSafeLink($0) ? $0 : nil }
+            if safe != nil, let id, Style.isSafeLinkID(id) {
+                bytes.append(contentsOf: "id=".utf8)
+                bytes.append(contentsOf: id.utf8)
+            }
+            bytes.append(0x3B)
+            if let safe { bytes.append(contentsOf: safe.utf8) }
             bytes.append(contentsOf: [0x1B, 0x5C])
         }
     }
