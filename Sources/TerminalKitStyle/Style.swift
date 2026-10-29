@@ -36,11 +36,24 @@ public struct Style: Sendable, Equatable, Hashable {
     /// A URI with a control character, a space or a non-ASCII byte is never sent to the terminal (see
     /// ``isSafeLink(_:)``): percent-encode it first.
     public var link: String?
+    /// The OSC 8 `id` of ``link``: runs with the same URI and id are one link to the terminal (hovered together), runs with
+    /// different ids are separate links. An id that is not letters, digits, `-`, `_` or `.` is left out (see ``isSafeLinkID(_:)``).
+    public var linkID: String?
 
     /// Whether `uri` may be written inside an OSC 8 sequence: printable ASCII only, no space, so no byte in it can end
     /// the sequence early or start another.
     public static func isSafeLink(_ uri: String) -> Bool {
         !uri.isEmpty && uri.utf8.allSatisfy { $0 > 0x20 && $0 < 0x7F }
+    }
+
+    /// Whether `id` may be written as an OSC 8 parameter: letters, digits, `-`, `_` and `.` only, so it can end neither the
+    /// parameter (`:`) nor the parameters (`;`) nor the sequence.
+    public static func isSafeLinkID(_ id: String) -> Bool {
+        !id.isEmpty
+            && id.utf8.allSatisfy { byte in
+                (0x30 ... 0x39).contains(byte) || (0x41 ... 0x5A).contains(byte) || (0x61 ... 0x7A).contains(byte)
+                    || byte == 0x2D || byte == 0x5F || byte == 0x2E
+            }
     }
 
     public static let `default` = Style()
@@ -55,7 +68,8 @@ public struct Style: Sendable, Equatable, Hashable {
         underline: UnderlineStyle = .none,
         strikethrough: Bool = false,
         inverse: Bool = false,
-        link: String? = nil
+        link: String? = nil,
+        linkID: String? = nil
     ) {
         self.fg = fg
         self.bg = bg
@@ -67,5 +81,6 @@ public struct Style: Sendable, Equatable, Hashable {
         self.strikethrough = strikethrough
         self.inverse = inverse
         self.link = link
+        self.linkID = linkID
     }
 }
