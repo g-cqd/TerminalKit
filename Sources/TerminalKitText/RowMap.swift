@@ -105,7 +105,8 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
     >? {
         guard let source = provenance(atRow: row) else { return nil }
         // The segment the cell is in or after; a cell left of the first is its start.
-        let segment = source.segments.last { $0.col <= col } ?? source.segments[0]
+        let index = source.segments.lastIndex { $0.col <= col } ?? 0
+        let segment = source.segments[index]
         let relative = col - segment.col
         var offset = 0
         // The first cell (`relative == 0`) has a grapheme under it like any other; only a cell left of the text has none.
@@ -118,8 +119,25 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
             let past = relative >= TextDisplayMetrics.displayWidth(of: segment.text, tabSize: tabSize)
             offset = edge == .trailing || past ? segment.sourceCount : 0
         }
-        let position = ContentPosition(block: source.block, line: segment.line, offset: segment.firstOffset + offset)
+        let position = ContentPosition(
+            block: source.block, line: segment.line,
+            offset: Self.reaching(segment.firstOffset + offset, in: source.segments, at: index, edge: edge))
         return LocatedPosition(position: position, ordinal: source.ordinal)
+    }
+
+    /// `offset`, or across the source that no cell draws between segment `index` and its neighbour on the same line: a selection that starts at a
+    /// segment's first grapheme, or ends after its last, takes the markers around it (`**` around bold text), so it copies them in pairs.
+    private static func reaching(_ offset: Int, in segments: [RowSegment], at index: Int, edge: SelectionEdge) -> Int {
+        let segment = segments[index]
+        if edge == .leading, offset == segment.firstOffset, index > 0, segments[index - 1].line == segment.line {
+            return segments[index - 1].endOffset
+        }
+        if edge == .trailing, offset == segment.endOffset, index + 1 < segments.count,
+            segments[index + 1].line == segment.line
+        {
+            return segments[index + 1].firstOffset
+        }
+        return offset
     }
 
     /// Like ``position(row:col:edge:tabSize:)``, but a cell over no content snaps to the nearest row that has some: the end of one

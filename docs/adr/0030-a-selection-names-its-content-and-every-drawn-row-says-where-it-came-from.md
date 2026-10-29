@@ -70,4 +70,6 @@ break joins two source lines on one row. `RowProvenance.segments` lists them (`R
 many graphemes of source it shows); the original fields are the first segment, so a plain row is unchanged. A segment whose drawn text is as
 long as its source maps cell to grapheme; one that is not (a decoded entity, a tab drawn as spaces) is atomic. A highlight paints the chrome
 between two segments only when the selection runs through both. The content is still the source, so a selection copies the Markdown it
-spans, markers included, which is what ask decided (its roadmap 0065).
+spans, markers included, which is what ask decided (its roadmap 0065). A position at a segment's first grapheme (leading) or after its last (trailing) reaches across the
+source no cell draws between it and its neighbour on the same line and row, so selecting a bold word copies `**bold**` and not `bold**`.
+A plain row has one segment, so nothing changes for it.

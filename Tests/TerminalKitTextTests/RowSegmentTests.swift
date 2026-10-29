@@ -18,7 +18,7 @@ struct RowSegmentTests {
                 segments: [
                     RowSegment(line: 0, firstOffset: 2, col: 2, text: "a "),  // cells 2, 3
                     RowSegment(line: 0, firstOffset: 6, col: 4, text: "bold"),  // cells 4 to 7
-                    RowSegment(line: 0, firstOffset: 10, col: 8, text: " "),  // cell 8
+                    RowSegment(line: 0, firstOffset: 12, col: 8, text: " "),  // cell 8
                     RowSegment(line: 0, firstOffset: 13, col: 9, text: "&", sourceCount: 5),  // cell 9
                     RowSegment(line: 1, firstOffset: 0, col: 11, text: "next")  // cells 11 to 14
                 ]))
@@ -30,6 +30,9 @@ struct RowSegmentTests {
         #expect(map.position(row: 0, col: 0)?.position == at("m", 0, 2))
         #expect(map.position(row: 0, col: 5)?.position == at("m", 0, 7))
         #expect(map.position(row: 0, col: 5, edge: .trailing)?.position == at("m", 0, 8))
+        // At a segment's edge, the hidden stars beside it come with it.
+        #expect(map.position(row: 0, col: 4)?.position == at("m", 0, 4))
+        #expect(map.position(row: 0, col: 7, edge: .trailing)?.position == at("m", 0, 12))
         #expect(map.position(row: 0, col: 9)?.position == at("m", 0, 13))
         #expect(map.position(row: 0, col: 9, edge: .trailing)?.position == at("m", 0, 18))
         #expect(map.position(row: 0, col: 10)?.position == at("m", 0, 18))
@@ -45,7 +48,7 @@ struct RowSegmentTests {
             Issue.record("no positions")
             return
         }
-        #expect(Selection(anchor: start, head: end).text(in: content) == "bold** &amp;")
+        #expect(Selection(anchor: start, head: end).text(in: content) == "**bold** &amp;")
     }
 
     @Test
