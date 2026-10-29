@@ -30,6 +30,7 @@ Code blocks highlighted by AtelierLexers (ask 0087) through a protocol, not a de
 AemiMarkdown `029235c` has what this entry waited for: `MarkdownDocument.topLevelBlocks` with stable identities and parser-based finality, and
 `events(of:)` to walk one block (its ADR-0002, a byte-at-a-time property test over every spec example); green default tests; DocC; a fresh benchmark
 (200 MB/s, 35 allocations per KB, a 100 KB answer streamed in 0.005 s); and a cmark comparison with 4 known differences in 5,000, all cmark's.
-Still not there: a source byte range per block, and a revision for the open block. A walk allocates its two stacks (`reserveCapacity(16)` each), so
-walking one block costs two allocations; measure that before relying on it per frame.
+Still not there: a source byte range per block, and a revision for the open block. A fresh walk allocates its two stacks (two allocations, none per
+node); keep one walker and `restart(at:in:)` it per block and a walk allocates nothing once warm (AemiMarkdown `3308985`, allocation suite). A block
+source range is deferred until this renderer asks for one (AemiMarkdown ADR-0002); the leaves' ranges cover row-to-source mapping.
 
