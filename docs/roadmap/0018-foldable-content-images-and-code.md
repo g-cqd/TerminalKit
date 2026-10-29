@@ -67,3 +67,10 @@ tests including 500 random stacks and folds.
 
 A fold API and a content image with tests for both states, cropping and release; a fallback test with graphics off; a benchmark
 of a scroll over images; a real-terminal check in at least kitty.
+
+## Status against ask (2026-10-29)
+
+The fold model and the scroll rule are in daily use through ask's `Foldable` transcript items. **`ScrollAnchor` and `BlockHeights` are not**:
+ask holds its place through a fold with its own arithmetic, which is now `ScrollPosition.keepPlace` (roadmap 0021). The drawing of images
+(first bullet of "Still owed") has no consumer until ask 0084 and stays last in the order. Folding a block while a later block above the
+viewport changes is exactly what `BlockHeights` is for, and is the first thing roadmap 0023 (row windows) builds on.

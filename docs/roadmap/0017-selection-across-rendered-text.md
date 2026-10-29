@@ -82,3 +82,11 @@ row's text at a highlight's columns so the host can style the middle.
 Selection tests over wrapped, wide and combining text; a selection that survives scrolling, resizing and re-wrapping (the
 property test the owner's requirement implies); the highlight costs nothing on unchanged rows in the flush benchmark; a
 real-pty probe that drags across two blocks and reads the clipboard.
+
+## Status against ask (2026-10-29)
+
+Used. ask drives `SelectionController` over `ContentSelection` across folded blocks, with edge autoscroll and word and line selection, and
+copies the text through `NSPasteboard` (`HostPasteboard`) when `ui.copyOnSelect` is on; ask does not use the kit's OSC 52 sink. Whether a
+selection that crosses a folded block copies the placeholder or the content is decided by `Transcript.contentText(at:)`, which this note has
+not read; read it before closing that open question. Still owed: the kit-side painting of the selection
+without redrawing unchanged rows (ask paints it in its own composer), tmux and ssh, the primary selection.

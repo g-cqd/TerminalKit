@@ -43,3 +43,11 @@ waited names the result.
 
 - Make the forward Delete key (and Insert) public in `Key` (`delete = 57349`, `insert = 57348`). `FunctionalKeyCode` is private to
   `SequenceRouter`, so ask names 57349 itself (`PromptEditor.forwardDelete`).
+
+## Status (2026-10-29)
+
+Rows 2 and 10 are done through roadmap 0021: the terminal's palette is delivered to a host (`PageFollower`), mixed into a page's tints and
+secondary text (`TerminalPage`), and re-asked when the system appearance changes (`SystemAppearance`); ask's own copies are deleted. Row 7
+and row 8 are partly done in ask (see 0016). Rows 1, 3, 4, 5 and 6 are unchanged: 1 and 6 are unprobed and need a real terminal, 3 and 5 wait
+for graphics. Entries 0016 to 0019 carry a status paragraph dated today. New work this consolidation opened: 0021 (done), 0022 (the markdown
+renderer), 0023 (row windows), 0024 (Linux), 0025 (event-driven).

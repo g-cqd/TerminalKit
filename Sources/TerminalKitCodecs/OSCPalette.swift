@@ -12,6 +12,12 @@ public enum OSCPalette: Sendable {
         case end
     }
 
+    /// The bytes asking for the foreground and the background only, with no device-attributes request after them.
+    ///
+    /// For a host that follows the terminal's page and whose session already owns the DA1 reply (the keyboard probe uses it): a terminal that
+    /// ignores the queries simply never answers, and the host keeps its first guess.
+    public static let pageQuery: [UInt8] = Array("\u{1b}]10;?\u{1b}\\\u{1b}]11;?\u{1b}\\".utf8)
+
     /// The bytes asking for the foreground, the background and the first `ansiCount` ANSI slots, followed by
     /// the device-attributes request that terminates the round.
     public static func query(ansiCount: Int = 16) -> [UInt8] {

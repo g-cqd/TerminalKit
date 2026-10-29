@@ -70,3 +70,10 @@ streams replayed through the decoder and the recognizer, and an allocation ceili
 
 A region API with tests for registration, overlap (the topmost wins), click versus drag, click counts and modifiers; a real-pty
 probe that clicks a drawn region and receives its identity; hit-test and decode in the allocation and time suites.
+
+## Status against ask (2026-10-29)
+
+Used. ask feeds `PointerRecognizer` and registers `RegionMap` regions for each frame (`FrameGeometry`), and acts on clicks (fold, status segments, the
+sandbox mark) and the wheel; the first "Still owed" bullet is done. Still owed: tmux and ssh, hover, a physical trackpad, and the keyboard
+path to the same action identity (ask keeps it as a convention, `ScreenController+Route`). Nothing here blocks ask; the unprobed terminals
+are the remaining work and need the owner at them.

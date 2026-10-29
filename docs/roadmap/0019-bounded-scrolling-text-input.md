@@ -48,3 +48,11 @@ a real editor before they grow.
 
 A viewport in the kit that scrolls by display row, with tests for the cap, wrapped lines and wide graphemes; ask's editor using it
 with its output unchanged on the existing editor tests; the input and render path measured before and after in release.
+
+## Status against ask (2026-10-29)
+
+Partly adopted, and this entry's "ask does not use any of it" is out of date: ask now uses `InputLayout` (`PromptLayout`, `PromptEditor`) and
+`InputViewport`, with the cap from its settings. It still keeps its own editing model (`PromptEditor`) and does not use `TextBuffer`,
+`TextCursor` or `TextNavigation`; whether it should is a decision, not a debt, and is left to the day the kit's editor has a second
+consumer (Atelier). Still owed: the clipping indicator, wheel and click inside the input (ask does these itself with `scrollInput`), and
+a terminal pass.
