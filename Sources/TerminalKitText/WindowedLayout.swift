@@ -44,17 +44,19 @@ public struct WindowedLayout<Line: Sendable>: Sendable {
     ///   - current: each item's current revision.
     ///   - rows: the rows from the end whose items must be known; their lines are kept.
     ///   - layout: the lines of item `index`, called for the items that changed and those newly reached, last first.
-    /// - Complexity: O(items) to compare revisions, plus the layout of the changed items and of those newly reached.
+    /// - Complexity: O(items) to compare revisions and move positions, plus the layout of the changed items and of those newly reached.
     public mutating func update(width: Int, revisions current: [Int], keepingFromEnd rows: Int, layout: (Int) -> [Line])
     {
         if width != self.width {
             reset()
             self.width = width
         }
-        let kept = Swift.min(revisions.count, current.count)
-        let firstChanged = (Swift.min(firstKnown, kept) ..< kept).first { revisions[$0] != current[$0] } ?? kept
+        // A shorter document forgets the items it no longer has; a changed item that is known is laid out again alone, and the items
+        // after it move by the rows it gained or lost (ask's roadmap 0158: forgetting everything after it cost seconds at the top).
+        forget(from: current.count)
+        let kept = revisions.count
         for index in 0 ..< Swift.min(firstKnown, kept) { revisions[index] = current[index] }
-        forget(from: firstChanged)
+        relayOutChanged(current, layout: layout)
         if firstKnown == revisions.count {
             // Nothing is known: the new items wait to be reached from the end, like the rest.
             revisions += current[revisions.count...]
@@ -117,6 +119,22 @@ public struct WindowedLayout<Line: Sendable>: Sendable {
             index += 1
         }
         return result
+    }
+
+    /// Lays out each known item whose revision changed, in one pass that moves every later item by the rows the earlier ones gained or
+    /// lost. A changed item keeps its new lines when it was keeping lines; a window that shows it lays out any other.
+    private mutating func relayOutChanged(_ current: [Int], layout: (Int) -> [Line]) {
+        guard firstKnown < revisions.count else { return }
+        var shift = 0
+        for index in firstKnown ..< revisions.count {
+            starts[index] += shift
+            guard revisions[index] != current[index] else { continue }
+            revisions[index] = current[index]
+            let lines = layout(index)
+            shift += lines.count - heights[index]
+            heights[index] = lines.count
+            if held[index] != nil { held[index] = lines }
+        }
     }
 
     /// Where the known rows end, in this layout's coordinate.
