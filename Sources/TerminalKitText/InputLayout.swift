@@ -29,46 +29,93 @@ public struct InputLayout: Sendable {
         let columns = max(1, columns)
         self.columns = columns
         self.firstRowIndent = min(max(0, firstRowIndent), columns - 1)
-        carets.reserveCapacity(text.count + 1)
+        carets.reserveCapacity(text.utf8.count + 1)
         let tabSize = max(1, tabSize)
         var column = self.firstRowIndent
-        // Before each character: `rows` holds everything rendered so far, `column` is its end, and every earlier source boundary
-        // has one cell in `carets`. Rows and caret cells are monotonic in reading order.
-        for character in text {
-            if character.isNewline {
-                let position =
-                    column >= columns
-                    ? Position(row: rows.count, column: 0) : Position(row: rows.count - 1, column: column)
-                carets.append(position)
-                rows.append("")
-                column = 0
+        // Before each step: `rows` holds everything rendered so far, `column` is its end, and every earlier source boundary has one
+        // cell in `carets`. Rows and caret cells are monotonic in reading order. Runs of printable ASCII, most of any draft, are laid
+        // out a row's worth at a time (ask roadmap 0151); everything else one grapheme at a time.
+        let utf8 = text.utf8
+        var index = text.startIndex
+        while index < text.endIndex {
+            let runEnd = Self.asciiRunEnd(in: utf8, from: index)
+            if runEnd > index {
+                place(ascii: utf8[index ..< runEnd], column: &column)
+                index = runEnd
                 continue
             }
-            var shown = character
-            if character != "\t", character.unicodeScalars.contains(where: TextSanitizer.isControl) { shown = "�" }
-            let width = UnicodeWidth.displayWidth(of: shown)
-            if width > columns { shown = "?" }
-            func measured(at column: Int) -> Int {
-                character == "\t" ? min(tabSize - column % tabSize, columns) : min(width, columns)
-            }
-            if column >= columns || measured(at: column) > columns - column {
-                rows.append("")
-                column = 0
-            }
-            carets.append(Position(row: rows.count - 1, column: column))
-            let used = measured(at: column)
-            if character == "\t" {
-                rows[rows.count - 1] += String(repeating: " ", count: used)
-            } else {
-                rows[rows.count - 1].append(shown)
-            }
-            column += used
+            let next = text.index(after: index)
+            place(text[index], column: &column, tabSize: tabSize)
+            index = next
         }
         if column >= columns {
             rows.append("")
             column = 0
         }
         carets.append(Position(row: rows.count - 1, column: column))
+    }
+
+    /// Where the run of printable ASCII that starts at `start` ends: each byte of it is a grapheme of its own, one cell wide. The last
+    /// byte before a non-ASCII one is left out, since the scalars after it (a combining mark, a joiner) can join its grapheme.
+    private static func asciiRunEnd(in utf8: String.UTF8View, from start: String.Index) -> String.Index {
+        var end = start
+        while end < utf8.endIndex, (0x20 ... 0x7E).contains(utf8[end]) { end = utf8.index(after: end) }
+        guard end > start, end < utf8.endIndex, utf8[end] >= 0x80 else { return end }
+        return utf8.index(before: end)
+    }
+
+    /// Lays out a run of printable ASCII, a row's worth at a time.
+    private mutating func place(ascii run: Substring.UTF8View, column: inout Int) {
+        var start = run.startIndex
+        var remaining = run.count
+        while remaining > 0 {
+            if column >= columns {
+                rows.append("")
+                column = 0
+            }
+            let take = min(columns - column, remaining)
+            let end = run.index(start, offsetBy: take)
+            let row = rows.count - 1
+            for cell in column ..< column + take { carets.append(Position(row: row, column: cell)) }
+            rows[row] += Substring(run[start ..< end])
+            column += take
+            remaining -= take
+            start = end
+        }
+    }
+
+    /// Lays out one grapheme: a newline ends the row; a tab runs to the next stop; a control shows as U+FFFD and a grapheme wider than
+    /// the viewport as `?`.
+    private mutating func place(_ character: Character, column: inout Int, tabSize: Int) {
+        if character.isNewline {
+            let position =
+                column >= columns
+                ? Position(row: rows.count, column: 0) : Position(row: rows.count - 1, column: column)
+            carets.append(position)
+            rows.append("")
+            column = 0
+            return
+        }
+        var shown = character
+        if character != "\t", character.unicodeScalars.contains(where: TextSanitizer.isControl) { shown = "�" }
+        let width = UnicodeWidth.displayWidth(of: shown)
+        if width > columns { shown = "?" }
+        let columns = columns
+        func measured(at column: Int) -> Int {
+            character == "\t" ? min(tabSize - column % tabSize, columns) : min(width, columns)
+        }
+        if column >= columns || measured(at: column) > columns - column {
+            rows.append("")
+            column = 0
+        }
+        carets.append(Position(row: rows.count - 1, column: column))
+        let used = measured(at: column)
+        if character == "\t" {
+            rows[rows.count - 1] += String(repeating: " ", count: used)
+        } else {
+            rows[rows.count - 1].append(shown)
+        }
+        column += used
     }
 
     /// The display cell for a source grapheme boundary; out-of-range offsets clamp to the text.
