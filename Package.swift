@@ -49,9 +49,9 @@ let package = Package(
     dependencies: [
         // Pinned by revision, the mechanism the whole ecosystem uses — Aemi publishes no tags, and
         // Atelier has done it this way all along. The pin is current with Atelier's after ADR-0005.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "00f8ea22a0a373685e62bff0aa86eac7fdfd8972"),
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "ebe456e455fd0c0b3d315d39a5d5dadbde3ca300"),
         // The parser `TerminalKitMarkdown` draws (roadmap 0022); it pins the same Aemi revision as above.
-        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "64b824ab9a4087e571d2d4e9903bfe87fe056bd5")
+        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "284a34058207e2aeaebf5dfcd6cc20af6844f45d")
     ],
     targets: [
         .target(
