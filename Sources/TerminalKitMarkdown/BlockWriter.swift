@@ -229,7 +229,9 @@ struct BlockWriter {
             frames[index].isFirstUsed = true
         }
         let room = Swift.max(0, Swift.min(prefixBudget, width - StyledLine(content).width))
-        lines.append(StyledLine(RowWrap.keepingLast(room, of: prefix) + content))
+        var runs = RowWrap.keepingLast(room, of: prefix)
+        runs.append(contentsOf: content)
+        lines.append(StyledLine(runs))
     }
 
     /// Adds a blank row: the bars of the open quotes, and no trailing space.

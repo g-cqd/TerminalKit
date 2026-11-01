@@ -31,20 +31,26 @@ extension BlockWriter {
     {
         let range = line.range
         var pieces: [Piece] = []
+        pieces.reserveCapacity(2 * highlights.count + 2)
         if line.spaces > 0 {
             pieces.append(
                 Piece(text: String(repeating: " ", count: line.spaces), style: base, source: nil, isVerbatim: false))
         }
-        var cuts: Set<Int> = [0, range.count]
+        // The cuts, sorted with repeats dropped: an array, as a set costs a hash for each of a line's few cuts.
+        var cuts: [Int] = [0, range.count]
+        cuts.reserveCapacity(2 * highlights.count + 2)
         for highlight in highlights {
-            cuts.insert(Swift.min(Swift.max(highlight.bytes.lowerBound, 0), range.count))
-            cuts.insert(Swift.min(Swift.max(highlight.bytes.upperBound, 0), range.count))
+            cuts.append(Swift.min(Swift.max(highlight.bytes.lowerBound, 0), range.count))
+            cuts.append(Swift.min(Swift.max(highlight.bytes.upperBound, 0), range.count))
         }
         for offset in 0 ..< range.count where document.source[range.lowerBound + offset] == 0x09 {
-            cuts.insert(offset)
-            cuts.insert(offset + 1)
+            cuts.append(offset)
+            cuts.append(offset + 1)
         }
-        let sorted = cuts.sorted()
+        cuts.sort()
+        var sorted: [Int] = []
+        sorted.reserveCapacity(cuts.count)
+        for cut in cuts where sorted.last != cut { sorted.append(cut) }
         var column = line.spaces
         var next = 0
         for (lower, upper) in zip(sorted, sorted.dropFirst()) {

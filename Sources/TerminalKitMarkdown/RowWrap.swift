@@ -122,6 +122,7 @@ struct RowWrap {
     /// The runs of `range` of the glyphs: one per stretch of a piece's contiguous bytes.
     private func runs(_ range: Range<Int>) -> [StyledRun] {
         var runs: [StyledRun] = []
+        runs.reserveCapacity(Swift.min(range.count, pieces.count))
         var index = range.lowerBound
         while index < range.upperBound {
             let first = glyphs[index]
