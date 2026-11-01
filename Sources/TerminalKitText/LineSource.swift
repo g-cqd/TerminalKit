@@ -1,9 +1,4 @@
-/// Lines that lend their bytes (review §7.4, P1a): a text split into lines once, read a line at a time without making
-/// strings. The lexers scan a line from it, and the diff reads its lines through it, so both apps share one shape:
-/// GitDiffViewer's ``TextLines`` and the ``Rope`` that arrived here from KittyCode.
-public protocol LineSource: Sendable {
-    var lineCount: Int { get }
-    /// Lends the UTF-8 bytes of line `index`, without its terminator.
-    /// - Precondition: `index` is in `0 ..< lineCount`.
-    func withLineBytes<R, E: Error>(at index: Int, _ body: (Span<UInt8>) throws(E) -> R) throws(E) -> R
-}
+/// Lines that lend their bytes, as a diff reads them, and a string's lines as a diff cuts them: aemi's (ADR 0023), re-exported for
+/// the clients that take them from this module. ``Rope`` conforms to `LineSource`.
+@_exported public import protocol AemiText.LineSource
+@_exported public import struct AemiText.TextLines
