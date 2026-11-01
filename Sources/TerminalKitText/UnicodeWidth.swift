@@ -68,7 +68,15 @@ public enum UnicodeWidth {
     }
 
     /// Returns the total number of terminal columns needed to display `string`.
+    ///
+    /// Printable ASCII, the common case, is one column a byte, counted without walking graphemes: in ASCII only CRLF
+    /// joins two characters, and controls are outside that range.
     public static func displayWidth(of string: String) -> Int {
+        let utf8 = string.utf8
+        let bytes = utf8.span
+        var index = 0
+        while index < bytes.count, bytes[index] &- 0x20 < 0x5F { index += 1 }
+        if index == bytes.count { return index }
         var total = 0
         for char in string {
             total &+= displayWidth(of: char)

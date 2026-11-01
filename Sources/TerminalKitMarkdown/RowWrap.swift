@@ -25,6 +25,7 @@ struct RowWrap {
                 glyphs.append(Glyph(piece: -1, start: 0, end: 0, width: 0, isSpace: false))
                 continue
             }
+            if Self.appendPrintableASCII(piece.text, piece: Int32(index), to: &glyphs) { continue }
             var offset = 0
             for character in piece.text {
                 let count = character.utf8.count
@@ -38,6 +39,24 @@ struct RowWrap {
             }
         }
         self.glyphs = glyphs
+    }
+
+    /// Appends a glyph a byte for `text` when it is all printable ASCII, the common case for code: each byte is then a grapheme one
+    /// column wide and none is a control. A piece with any other byte is left to the grapheme walk, since a mark or a prepended
+    /// character next to an ASCII byte joins it.
+    private static func appendPrintableASCII(_ text: String, piece: Int32, to glyphs: inout [Glyph]) -> Bool {
+        let utf8 = text.utf8
+        let bytes = utf8.span
+        var index = 0
+        while index < bytes.count, bytes[index] &- 0x20 < 0x5F { index += 1 }
+        guard index == bytes.count else { return false }
+        for offset in 0 ..< bytes.count {
+            glyphs.append(
+                Glyph(
+                    piece: piece, start: Int32(offset), end: Int32(offset + 1), width: 1,
+                    isSpace: bytes[offset] == 0x20))
+        }
+        return true
     }
 
     /// The widest hard line, and the widest word: what a table column needs to show a cell on one row, and at the least.
