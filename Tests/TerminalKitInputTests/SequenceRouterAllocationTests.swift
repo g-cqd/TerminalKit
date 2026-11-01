@@ -29,7 +29,10 @@ struct SequenceRouterAllocationTests {
 
     static let workloads: [Workload] = [
         Workload(
-            name: "a 64-byte run of text", read: Array(String(repeating: "typing! ", count: 8).utf8), allowedPerRead: 0),
+            name: "a 64-byte run of text",
+            read: Array(String(repeating: "typing! ", count: 8).utf8),
+            allowedPerRead: 0
+        ),
         Workload(name: "a single keystroke", read: [UInt8(ascii: "a")], allowedPerRead: 0),
         Workload(name: "the Escape key", read: [0x1b], allowedPerRead: 0),
         Workload(name: "an arrow key", read: [0x1b, 0x5b, 0x41], allowedPerRead: 0),
@@ -40,7 +43,8 @@ struct SequenceRouterAllocationTests {
             name: "a 1 KiB bracketed paste",
             read: Array("\u{1b}[200~".utf8) + Array(repeating: UInt8(ascii: "x"), count: 1024)
                 + Array("\u{1b}[201~".utf8),
-            allowedPerRead: 1)
+            allowedPerRead: 1
+        )
     ]
 
     @Test(.enabled(if: allocationCountingAvailable && !isDebugBuild), arguments: workloads)
@@ -54,7 +58,8 @@ struct SequenceRouterAllocationTests {
         let count = try #require(
             minimumAllocations(repeats: 5) {
                 for _ in 0 ..< reads { route(workload.read, through: &router, into: &events) }
-            })
+            }
+        )
         #expect(count <= workload.allowedPerRead * reads, "\(reads) reads allocated \(count) times")
         #expect(!events.isEmpty, "the workload produced no event, so it measured nothing")
     }

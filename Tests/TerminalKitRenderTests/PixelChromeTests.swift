@@ -117,7 +117,9 @@ struct PixelChromeTests {
                 .fill(row: 2, column: 4, columns: 30, rows: 1, color: grey),
                 .fill(row: 3, column: 4, columns: 10, rows: 2, color: grey),
                 .bar(row: 0, column: 50, widthPixels: 3, heightPixels: 45, color: grey, xOffset: 4, yOffset: 7)
-            ], into: &bytes)
+            ],
+            into: &bytes
+        )
         let controls = commands(bytes)
         #expect(controls.filter { $0.hasPrefix("a=t") }.count == 2)
         #expect(controls[0] == "a=t,f=32,t=d,i=1048576,s=1,v=1,q=2")
@@ -148,7 +150,8 @@ struct PixelChromeTests {
                 .fill(row: 0, column: 0, columns: 0, rows: 1, color: grey),
                 .bar(row: 0, column: 0, widthPixels: 0, heightPixels: 5, color: grey, xOffset: 0, yOffset: 0)
             ],
-            into: &bytes)
+            into: &bytes
+        )
         #expect(commands(bytes).isEmpty)
     }
 }

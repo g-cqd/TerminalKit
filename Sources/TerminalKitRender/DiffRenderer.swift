@@ -19,7 +19,9 @@ public enum DiffRenderer: Sendable {
 
     /// Renders diff into a caller-provided buffer (avoids allocation when reused).
     public static func render(
-        front: ScreenBuffer, back: ScreenBuffer, into bytes: inout ContiguousArray<UInt8>
+        front: ScreenBuffer,
+        back: ScreenBuffer,
+        into bytes: inout ContiguousArray<UInt8>
     ) {
         var lastRow = -1
         var lastCol = -1
@@ -114,7 +116,11 @@ public enum DiffRenderer: Sendable {
     ///
     /// - Returns: whether the gap was written. If not, nothing was appended.
     private static func writeGap(
-        _ buffer: ScreenBuffer, row: Int, from start: Int, to end: Int, styleID: UInt32,
+        _ buffer: ScreenBuffer,
+        row: Int,
+        from start: Int,
+        to end: Int,
+        styleID: UInt32,
         into bytes: inout ContiguousArray<UInt8>
     ) -> Bool {
         // `ESC [ row ; col H`: four bytes and the digits.

@@ -33,7 +33,8 @@ struct ProcessFootprintTests {
         let grew = try #require(
             ProcessFootprint.growth {
                 ballast.fill(count: 120_000)
-            })
+            }
+        )
         #expect(grew > 0, "12 MB of deliberate garbage was reported as no growth — the instrument is blind")
         ballast.release()
     }

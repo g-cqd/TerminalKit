@@ -46,7 +46,8 @@ struct TerminalResetTests {
         #expect(
             bytes == Self.endSynchronizedOutput + Self.leaveAlternateScreen + Self.disableMouse
                 + Self.disableFocusEvents + Self.disableBracketedPaste + Self.defaultGraphicRendition
-                + Self.showCursor)
+                + Self.showCursor
+        )
     }
 
     @Test func `the selective tier ends synchronized output before anything else`() {
@@ -83,11 +84,13 @@ struct TerminalResetTests {
         // the ladder has quietly become the destructive thing it was written to avoid.
         #expect(
             !TerminalResetLadder.escapeBytes(for: .selectiveCleanup)
-                .contains(TerminalResetLadder.escapeBytes(for: .fullReset)))
+                .contains(TerminalResetLadder.escapeBytes(for: .fullReset))
+        )
         #expect(
             !TerminalResetLadder.escapeBytes(for: .softReset)
                 .contains(
-                    TerminalResetLadder.escapeBytes(for: .fullReset))
+                    TerminalResetLadder.escapeBytes(for: .fullReset)
+                )
         )
     }
 
@@ -100,11 +103,14 @@ struct TerminalResetTests {
     @Test func `the ladder stops at the tier it is given`() {
         #expect(
             TerminalResetLadder.escapeBytes(upTo: .selectiveCleanup)
-                == TerminalResetLadder.escapeBytes(for: .selectiveCleanup))
+                == TerminalResetLadder.escapeBytes(for: .selectiveCleanup)
+        )
         #expect(
             TerminalResetLadder.escapeBytes(upTo: .softReset) == TerminalResetLadder.escapeBytes(
-                for: .selectiveCleanup)
-                + TerminalResetLadder.escapeBytes(for: .softReset))
+                for: .selectiveCleanup
+            )
+                + TerminalResetLadder.escapeBytes(for: .softReset)
+        )
     }
 
     @Test func `the full ladder ends with the full reset`() {

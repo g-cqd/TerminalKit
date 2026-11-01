@@ -16,13 +16,18 @@ private func sampleRegions() -> RegionMap<String> {
 
 /// One-based, as the decoder produces it.
 private func report(
-    _ kind: MouseEventKind, _ button: MouseButton = .left, row: Int, col: Int, modifiers: KeyModifiers = []
+    _ kind: MouseEventKind,
+    _ button: MouseButton = .left,
+    row: Int,
+    col: Int,
+    modifiers: KeyModifiers = []
 ) -> MouseEvent {
     MouseEvent(button: button, modifiers: modifiers, row: row, col: col, kind: kind)
 }
 
 private func run(
-    _ steps: [(MouseEvent, Double)], in regions: RegionMap<String>,
+    _ steps: [(MouseEvent, Double)],
+    in regions: RegionMap<String>,
     settings: PointerRecognizer<String>.Settings = .init()
 )
     -> [Pointer]
@@ -81,34 +86,44 @@ struct RegionMapTests {
 struct PointerRecognizerTests {
     @Test func `a press and a release on one cell is a click on the region, in zero-based cells`() {
         let events = run(
-            [(report(.press, row: 3, col: 6), 0), (report(.release, row: 3, col: 6), 0.05)], in: sampleRegions())
+            [(report(.press, row: 3, col: 6), 0), (report(.release, row: 3, col: 6), 0.05)],
+            in: sampleRegions()
+        )
         #expect(
             events == [
                 .click(target: "block", cell: CellPosition(row: 2, col: 5), button: .left, modifiers: [], count: 1)
-            ])
+            ]
+        )
     }
 
     @Test func `a click over nothing is still reported, with no target`() {
         let events = run(
-            [(report(.press, row: 2, col: 1), 0), (report(.release, row: 2, col: 1), 0.05)], in: sampleRegions())
+            [(report(.press, row: 2, col: 1), 0), (report(.release, row: 2, col: 1), 0.05)],
+            in: sampleRegions()
+        )
         #expect(
-            events == [.click(target: nil, cell: CellPosition(row: 1, col: 0), button: .left, modifiers: [], count: 1)])
+            events == [.click(target: nil, cell: CellPosition(row: 1, col: 0), button: .left, modifiers: [], count: 1)]
+        )
     }
 
     @Test func `the modifiers held at the press are the click's`() {
         let events = run(
             [(report(.press, row: 1, col: 1, modifiers: [.alt]), 0), (report(.release, row: 1, col: 1), 0.05)],
-            in: sampleRegions())
+            in: sampleRegions()
+        )
         #expect(
             events == [
                 .click(target: "header", cell: CellPosition(row: 0, col: 0), button: .left, modifiers: [.alt], count: 1)
-            ])
+            ]
+        )
     }
 
     @Test func `a release elsewhere is a drag and not a click on either target`() {
         // Two rows of movement with no motion report is far enough to be a drag, so it is one.
         let events = run(
-            [(report(.press, row: 1, col: 1), 0), (report(.release, row: 3, col: 1), 0.05)], in: sampleRegions())
+            [(report(.press, row: 1, col: 1), 0), (report(.release, row: 3, col: 1), 0.05)],
+            in: sampleRegions()
+        )
         #expect(!events.contains { if case .click = $0 { true } else { false } })
     }
 
@@ -129,7 +144,8 @@ struct PointerRecognizerTests {
         #expect(
             out == [
                 .click(target: "second", cell: CellPosition(row: 2, col: 5), button: .left, modifiers: [], count: 1)
-            ])
+            ]
+        )
     }
 
     @Test func `motion past the threshold begins a drag once, then moves, then ends, and is never a click`() {
@@ -138,13 +154,16 @@ struct PointerRecognizerTests {
                 (report(.press, row: 3, col: 1), 0), (report(.drag, row: 3, col: 1), 0.01),
                 (report(.drag, row: 3, col: 2), 0.02),
                 (report(.drag, row: 3, col: 3), 0.03), (report(.release, row: 3, col: 3), 0.04)
-            ], in: sampleRegions())
+            ],
+            in: sampleRegions()
+        )
         #expect(
             events == [
                 .dragBegan(target: "block", origin: CellPosition(row: 2, col: 0), button: .left, modifiers: []),
                 .dragMoved(to: CellPosition(row: 2, col: 1)), .dragMoved(to: CellPosition(row: 2, col: 2)),
                 .dragEnded(at: CellPosition(row: 2, col: 2))
-            ])
+            ]
+        )
     }
 
     @Test func `a larger threshold keeps a small wobble a click`() {
@@ -152,21 +171,28 @@ struct PointerRecognizerTests {
             [
                 (report(.press, row: 3, col: 1), 0), (report(.drag, row: 3, col: 2), 0.01),
                 (report(.release, row: 3, col: 1), 0.02)
-            ], in: sampleRegions(), settings: .init(dragThreshold: 2))
+            ],
+            in: sampleRegions(),
+            settings: .init(dragThreshold: 2)
+        )
         #expect(
             events == [
                 .click(target: "block", cell: CellPosition(row: 2, col: 0), button: .left, modifiers: [], count: 1)
-            ])
+            ]
+        )
     }
 
     @Test func `a release far from the press with no motion reported is a drag, as with mode 1000 alone`() {
         let events = run(
-            [(report(.press, row: 3, col: 1), 0), (report(.release, row: 3, col: 9), 0.05)], in: sampleRegions())
+            [(report(.press, row: 3, col: 1), 0), (report(.release, row: 3, col: 9), 0.05)],
+            in: sampleRegions()
+        )
         #expect(
             events == [
                 .dragBegan(target: "block", origin: CellPosition(row: 2, col: 0), button: .left, modifiers: []),
                 .dragEnded(at: CellPosition(row: 2, col: 8))
-            ])
+            ]
+        )
     }
 
     @Test func `clicks in quick succession on one cell count as a double and a triple, then start over`() {
@@ -203,13 +229,16 @@ struct PointerRecognizerTests {
                 (report(.press, row: 3, col: 6), 0), (report(.press, .scrollDown, row: 3, col: 6), 0.01),
                 (report(.press, .scrollUp, row: 1, col: 1, modifiers: [.shift]), 0.02),
                 (report(.release, row: 3, col: 6), 0.03)
-            ], in: sampleRegions())
+            ],
+            in: sampleRegions()
+        )
         #expect(
             events == [
                 .wheel(target: "block", cell: CellPosition(row: 2, col: 5), direction: .down, modifiers: []),
                 .wheel(target: "header", cell: CellPosition(row: 0, col: 0), direction: .up, modifiers: [.shift]),
                 .click(target: "block", cell: CellPosition(row: 2, col: 5), button: .left, modifiers: [], count: 1)
-            ])
+            ]
+        )
     }
 
     @Test func `motion with no button is ignored, and so is a pixel-mode report that has no cell`() {
@@ -217,13 +246,17 @@ struct PointerRecognizerTests {
             [
                 (report(.motion, .release, row: 3, col: 6), 0),
                 (MouseEvent(button: .left, row: 0, col: 0, pixelX: 40, pixelY: 20), 0.01)
-            ], in: sampleRegions())
+            ],
+            in: sampleRegions()
+        )
         #expect(events.isEmpty)
     }
 
     @Test func `a stray release or drag with nothing pressed does nothing`() {
         let events = run(
-            [(report(.release, row: 3, col: 6), 0), (report(.drag, row: 3, col: 7), 0.01)], in: sampleRegions())
+            [(report(.release, row: 3, col: 6), 0), (report(.drag, row: 3, col: 7), 0.01)],
+            in: sampleRegions()
+        )
         #expect(events.isEmpty)
     }
 

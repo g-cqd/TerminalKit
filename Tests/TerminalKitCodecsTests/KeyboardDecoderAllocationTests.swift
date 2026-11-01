@@ -33,7 +33,8 @@ struct KeyboardDecoderAllocationTests {
         let count = try #require(
             minimumAllocations(repeats: 5) {
                 for _ in 0 ..< 1_000 { _ = decoder.feed(UInt8(ascii: "a")) }
-            })
+            }
+        )
         #expect(count == 0, "1,000 keystrokes allocated \(count) times")
     }
 
@@ -47,7 +48,8 @@ struct KeyboardDecoderAllocationTests {
         let count = try #require(
             minimumAllocations(repeats: 5) {
                 for _ in 0 ..< 100 { ballast.append(String(repeating: "x", count: 64)) }
-            })
+            }
+        )
         #expect(count >= 100, "the instrument reported \(count) allocations for 100 strings")
     }
 }

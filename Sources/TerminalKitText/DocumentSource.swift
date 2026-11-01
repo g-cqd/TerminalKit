@@ -42,7 +42,9 @@ public struct ArrayDocumentSource: DocumentSource, Sendable {
         var maxWidth = 0
         for lineIndex in clamped {
             maxWidth = max(
-                maxWidth, TextDisplayMetrics.displayWidth(of: storage[lineIndex], tabSize: tabSize))
+                maxWidth,
+                TextDisplayMetrics.displayWidth(of: storage[lineIndex], tabSize: tabSize)
+            )
         }
         return maxWidth
     }

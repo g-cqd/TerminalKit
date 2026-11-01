@@ -18,7 +18,8 @@ struct FrameBufferRegressionTests {
                 pipeline.buffer.dirty.dirtyRanges(columns: pipeline.columns)
                     .reduce(0) {
                         $0 + $1.colEnd - $1.colStart
-                    })
+                    }
+            )
             terminal.clearOutput()
             try pipeline.flush()
             bytes.append(terminal.writtenOutput)

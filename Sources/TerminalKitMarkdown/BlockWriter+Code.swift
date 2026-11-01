@@ -12,7 +12,9 @@ extension BlockWriter {
         defer { frames.removeLast() }
         if let language = code.language, !code.isHTML {
             emitWrapped(
-                [Piece(text: language, style: theme.codeLabel, source: nil, isVerbatim: false)], breaksAnywhere: true)
+                [Piece(text: language, style: theme.codeLabel, source: nil, isVerbatim: false)],
+                breaksAnywhere: true
+            )
         }
         var highlights: [[MarkdownHighlight]]?
         if let language = code.language, !code.isHTML, let highlighter {
@@ -34,7 +36,8 @@ extension BlockWriter {
         pieces.reserveCapacity(2 * highlights.count + 2)
         if line.spaces > 0 {
             pieces.append(
-                Piece(text: String(repeating: " ", count: line.spaces), style: base, source: nil, isVerbatim: false))
+                Piece(text: String(repeating: " ", count: line.spaces), style: base, source: nil, isVerbatim: false)
+            )
         }
         // The cuts, sorted with repeats dropped: an array, as a set costs a hash for each of a line's few cuts.
         var cuts: [Int] = [0, range.count]
@@ -62,7 +65,8 @@ extension BlockWriter {
             if upper == lower + 1, document.source[source.lowerBound] == 0x09 {
                 let count = 4 - column % 4
                 pieces.append(
-                    Piece(text: String(repeating: " ", count: count), style: style, source: source, isVerbatim: false))
+                    Piece(text: String(repeating: " ", count: count), style: style, source: source, isVerbatim: false)
+                )
                 column += count
                 continue
             }

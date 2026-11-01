@@ -14,14 +14,17 @@ struct RowSegmentTests {
         map.set(
             row: 0,
             to: RowProvenance(
-                block: "m", ordinal: 0,
+                block: "m",
+                ordinal: 0,
                 segments: [
                     RowSegment(line: 0, firstOffset: 2, col: 2, text: "a "),  // cells 2, 3
                     RowSegment(line: 0, firstOffset: 6, col: 4, text: "bold"),  // cells 4 to 7
                     RowSegment(line: 0, firstOffset: 12, col: 8, text: " "),  // cell 8
                     RowSegment(line: 0, firstOffset: 13, col: 9, text: "&", sourceCount: 5),  // cell 9
                     RowSegment(line: 1, firstOffset: 0, col: 11, text: "next")  // cells 11 to 14
-                ]))
+                ]
+            )
+        )
         return map
     }
 

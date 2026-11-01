@@ -152,7 +152,8 @@ struct ColumnSlicerTests {
                 for high in low ... 7 {
                     let parts = ColumnSlicer.split(text, columns: low ..< high)
                     #expect(
-                        parts.before + parts.selected + parts.after == text, "\(text.debugDescription) \(low)..<\(high)"
+                        parts.before + parts.selected + parts.after == text,
+                        "\(text.debugDescription) \(low)..<\(high)"
                     )
                 }
             }

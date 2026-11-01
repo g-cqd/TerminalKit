@@ -21,7 +21,8 @@ struct TerminalCapabilitiesTests {
         #expect(TerminalCapabilities.cellPixelSize(of: TerminalSize(columns: 100, rows: 40)) == nil)
         #expect(
             TerminalCapabilities.cellPixelSize(of: TerminalSize(columns: 0, rows: 40, pixelWidth: 1, pixelHeight: 1))
-                == nil)
+                == nil
+        )
     }
 
     @Test
@@ -29,7 +30,8 @@ struct TerminalCapabilitiesTests {
         #expect(TerminalCapabilities(environment: ["KITTY_WINDOW_ID": "1"], size: size).supportsPixelChrome)
         #expect(
             !TerminalCapabilities(environment: ["KITTY_WINDOW_ID": "1"], size: TerminalSize(columns: 80, rows: 24))
-                .supportsPixelChrome)
+                .supportsPixelChrome
+        )
         #expect(!TerminalCapabilities(environment: [:], size: size).supportsPixelChrome)
     }
 }

@@ -11,8 +11,10 @@ private func stack(_ heights: [(String, Int)]) -> BlockHeights<String> {
 @Suite("A block folds to its placeholder")
 struct FoldableBlockTests {
     private let block = FoldableBlock(
-        id: "code", lines: ["let a = 1", "let b = 2", "let c = 3"],
-        placeholder: FoldPlaceholder(text: "swift, 3 lines", hint: "click to show"))
+        id: "code",
+        lines: ["let a = 1", "let b = 2", "let c = 3"],
+        placeholder: FoldPlaceholder(text: "swift, 3 lines", hint: "click to show")
+    )
 
     @Test func `folded, it is its placeholder and one row; shown, it is its lines`() {
         #expect(block.visibleLines(folded: true) == ["swift, 3 lines"])
@@ -139,7 +141,8 @@ struct ScrollAnchorTests {
         let blocks = stack([("a", 3)])
         #expect(
             blocks.scrollOffset(keeping: ScrollAnchor(block: "gone", rowInBlock: 0), atScreenRow: 0, viewportRows: 4)
-                == nil)
+                == nil
+        )
         #expect(BlockHeights<String>().anchor(atRow: 0) == nil)
     }
 
@@ -166,7 +169,8 @@ struct ScrollAnchorTests {
             let after = folded.enumerated()
                 .reduce(into: BlockHeights<Int>()) { $0.append($1.offset, height: $1.element) }
             let offset = try #require(
-                after.scrollOffset(keeping: anchor, atScreenRow: screenRow, viewportRows: viewport))
+                after.scrollOffset(keeping: anchor, atScreenRow: screenRow, viewportRows: viewport)
+            )
             let row = try #require(after.row(of: anchor))
             let wanted = row - screenRow
             let atTop = wanted < 0

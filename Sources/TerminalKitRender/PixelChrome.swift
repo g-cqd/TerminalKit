@@ -119,21 +119,38 @@ public struct PixelChrome: Sendable, Equatable {
                     let (width, height) = line.axis == .vertical ? (1, pixels) : (pixels, 1)
                     let id = imageID(width: width, height: height, color: line.color, into: &bytes)
                     place(
-                        id: id, placement: placementID, row: line.row, column: line.column,
+                        id: id,
+                        placement: placementID,
+                        row: line.row,
+                        column: line.column,
                         xOffset: line.axis == .vertical ? line.offset : 0,
-                        yOffset: line.axis == .horizontal ? line.offset : 0, into: &bytes)
+                        yOffset: line.axis == .horizontal ? line.offset : 0,
+                        into: &bytes
+                    )
                 case .fill(let row, let column, let columns, let rows, let color):
                     guard columns > 0, rows > 0 else { continue }
                     let id = imageID(width: 1, height: 1, color: color, into: &bytes)
                     place(
-                        id: id, placement: placementID, row: row, column: column, columns: columns, rows: rows,
-                        into: &bytes)
+                        id: id,
+                        placement: placementID,
+                        row: row,
+                        column: column,
+                        columns: columns,
+                        rows: rows,
+                        into: &bytes
+                    )
                 case .bar(let row, let column, let widthPixels, let heightPixels, let color, let xOffset, let yOffset):
                     guard heightPixels > 0, widthPixels > 0 else { continue }
                     let id = imageID(width: widthPixels, height: heightPixels, color: color, into: &bytes)
                     place(
-                        id: id, placement: placementID, row: row, column: column, xOffset: xOffset, yOffset: yOffset,
-                        into: &bytes)
+                        id: id,
+                        placement: placementID,
+                        row: row,
+                        column: column,
+                        xOffset: xOffset,
+                        yOffset: yOffset,
+                        into: &bytes
+                    )
             }
         }
         placed = elements
@@ -141,23 +158,39 @@ public struct PixelChrome: Sendable, Equatable {
 
     /// The command deleting every placement and its image data, for teardown or a resize.
     public static let deleteAllBytes: [UInt8] = GraphicsEncoder.encode(
-        GraphicsCommand(action: .delete, deletion: .allPlacements(freeingData: true), isQuiet: true))
+        GraphicsCommand(action: .delete, deletion: .allPlacements(freeingData: true), isQuiet: true)
+    )
 
     /// The command deleting every placement while keeping the image data for re-placing.
     public static let deletePlacementsBytes: [UInt8] = GraphicsEncoder.encode(
-        GraphicsCommand(action: .delete, deletion: .allPlacements(freeingData: false), isQuiet: true))
+        GraphicsCommand(action: .delete, deletion: .allPlacements(freeingData: false), isQuiet: true)
+    )
 
     private func place(
-        id: UInt32, placement: UInt32, row: Int, column: Int, xOffset: Int = 0, yOffset: Int = 0, columns: Int = 0,
-        rows: Int = 0, into bytes: inout ContiguousArray<UInt8>
+        id: UInt32,
+        placement: UInt32,
+        row: Int,
+        column: Int,
+        xOffset: Int = 0,
+        yOffset: Int = 0,
+        columns: Int = 0,
+        rows: Int = 0,
+        into bytes: inout ContiguousArray<UInt8>
     ) {
         EscapeSequences.appendMoveCursor(row: row + 1, col: column + 1, to: &bytes)
         let placement = GraphicsCommand.Placement(
-            id: placement, zIndex: -1, xOffset: UInt32(max(0, xOffset)), yOffset: UInt32(max(0, yOffset)),
-            columns: UInt32(max(0, columns)), rows: UInt32(max(0, rows)))
+            id: placement,
+            zIndex: -1,
+            xOffset: UInt32(max(0, xOffset)),
+            yOffset: UInt32(max(0, yOffset)),
+            columns: UInt32(max(0, columns)),
+            rows: UInt32(max(0, rows))
+        )
         bytes.append(
             contentsOf: GraphicsEncoder.encode(
-                GraphicsCommand(action: .placement, id: id, placement: placement, isQuiet: true)))
+                GraphicsCommand(action: .placement, id: id, placement: placement, isQuiet: true)
+            )
+        )
     }
 
     private mutating func imageID(width: Int, height: Int, color: ColorRGB, into bytes: inout ContiguousArray<UInt8>)
@@ -177,8 +210,17 @@ public struct PixelChrome: Sendable, Equatable {
         bytes.append(
             contentsOf: GraphicsEncoder.encode(
                 GraphicsCommand(
-                    action: .transmit, format: .rgba, transmission: .direct, id: id, width: UInt32(width),
-                    height: UInt32(height), payload: payload, isQuiet: true)))
+                    action: .transmit,
+                    format: .rgba,
+                    transmission: .direct,
+                    id: id,
+                    width: UInt32(width),
+                    height: UInt32(height),
+                    payload: payload,
+                    isQuiet: true
+                )
+            )
+        )
         return id
     }
 }

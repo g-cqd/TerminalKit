@@ -206,11 +206,20 @@ public final class RenderPipeline {
             if hint.delta > 0 {
                 let blankStart = hint.regionTop + hint.regionHeight - hint.delta
                 front.fill(
-                    row: blankStart, col: 0, width: front.columns, height: hint.delta, cell: .empty)
+                    row: blankStart,
+                    col: 0,
+                    width: front.columns,
+                    height: hint.delta,
+                    cell: .empty
+                )
             } else {
                 front.fill(
-                    row: hint.regionTop, col: 0, width: front.columns, height: -hint.delta,
-                    cell: .empty)
+                    row: hint.regionTop,
+                    col: 0,
+                    width: front.columns,
+                    height: -hint.delta,
+                    cell: .empty
+                )
             }
 
             // The scroll moved every column, including ones this frame never wrote (sidebar, separators): mark any

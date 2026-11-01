@@ -6,7 +6,9 @@ public enum TextOperations {
     /// an out-of-bounds `cursor.col` never causes a crash.
     @discardableResult
     public static func insert(
-        _ text: String, into buffer: inout TextBuffer, at cursor: inout TextCursor
+        _ text: String,
+        into buffer: inout TextBuffer,
+        at cursor: inout TextCursor
     ) -> TextMutation {
         if buffer.lineCount == 0 { buffer.lines = [""] }
         let row = cursor.row
@@ -27,7 +29,8 @@ public enum TextOperations {
 
         let insertedLines = text.split(separator: "\n", omittingEmptySubsequences: false)
             .map(
-                String.init)
+                String.init
+            )
         let prefix = String(line[..<index])
         let suffix = String(line[index...])
 
@@ -125,19 +128,25 @@ public enum TextOperations {
 
     @discardableResult
     public static func deleteRange(
-        in buffer: inout TextBuffer, at cursor: inout TextCursor, selection: TextSelection
+        in buffer: inout TextBuffer,
+        at cursor: inout TextCursor,
+        selection: TextSelection
     ) -> TextMutation {
         let (start, end) = selection.ordered
 
         guard start.row == end.row else {
             let firstLine = buffer.line(at: start.row)
             let firstStartIndex = firstLine.index(
-                firstLine.startIndex, offsetBy: min(start.col, firstLine.count))
+                firstLine.startIndex,
+                offsetBy: min(start.col, firstLine.count)
+            )
             let firstPrefix = String(firstLine[..<firstStartIndex])
 
             let lastLine = buffer.line(at: end.row)
             let lastEndIndex = lastLine.index(
-                lastLine.startIndex, offsetBy: min(end.col, lastLine.count))
+                lastLine.startIndex,
+                offsetBy: min(end.col, lastLine.count)
+            )
             let lastSuffix = String(lastLine[lastEndIndex...])
 
             buffer.setLine(at: start.row, to: firstPrefix + lastSuffix)

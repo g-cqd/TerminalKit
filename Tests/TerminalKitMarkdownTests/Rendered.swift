@@ -6,7 +6,10 @@ enum Rendered {
     static func document(_ markdown: String) -> MarkdownDocument { MarkdownParser.parse(Array(markdown.utf8)) }
 
     static func lines(
-        _ markdown: String, width: Int = 80, theme: MarkdownTheme = .plain, links: MarkdownLinks = MarkdownLinks(),
+        _ markdown: String,
+        width: Int = 80,
+        theme: MarkdownTheme = .plain,
+        links: MarkdownLinks = MarkdownLinks(),
         softBreaks: SoftBreaks = .space
     ) -> [StyledLine] {
         var renderer = MarkdownRenderer(theme: theme, links: links, softBreaks: softBreaks)
@@ -14,14 +17,20 @@ enum Rendered {
     }
 
     static func rows(
-        _ markdown: String, width: Int = 80, theme: MarkdownTheme = .plain, links: MarkdownLinks = MarkdownLinks()
+        _ markdown: String,
+        width: Int = 80,
+        theme: MarkdownTheme = .plain,
+        links: MarkdownLinks = MarkdownLinks()
     ) -> [String] {
         lines(markdown, width: width, theme: theme, links: links).map(\.text)
     }
 
     /// The run that shows `text`, in the rendering of `markdown`.
     static func run(
-        _ text: String, in markdown: String, theme: MarkdownTheme = .plain, links: MarkdownLinks = MarkdownLinks()
+        _ text: String,
+        in markdown: String,
+        theme: MarkdownTheme = .plain,
+        links: MarkdownLinks = MarkdownLinks()
     )
         -> StyledRun?
     {

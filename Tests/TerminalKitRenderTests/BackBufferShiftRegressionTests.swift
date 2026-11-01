@@ -99,7 +99,8 @@ struct BackBufferShiftRegressionTests {
         for col in 0 ..< 5 {
             #expect(
                 pipeline.buffer.dirty.isDirty(col),
-                "Row 0 col \(col) should be dirty (style change)")
+                "Row 0 col \(col) should be dirty (style change)"
+            )
         }
         for col in 0 ..< 5 {
             #expect(!pipeline.buffer.dirty.isDirty(5 + col), "Row 1 col \(col) should not be dirty")

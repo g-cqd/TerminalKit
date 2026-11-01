@@ -21,7 +21,8 @@ struct PageFollowerTests {
         #expect(follower.read(bytes("\u{1b}]10;rgb:0000/0000/0000\u{07}")) == nil)
         #expect(
             follower.read(bytes("\u{1b}]11;rgb:ffff/ffff/ffff\u{1b}\\"))
-                == TerminalPage(background: SIMD3(255, 255, 255), foreground: .zero))
+                == TerminalPage(background: SIMD3(255, 255, 255), foreground: .zero)
+        )
         var fresh = PageFollower()
         #expect(fresh.read(bytes("\u{1b}]11;rgb:1e1e/1e1e/1e1e\u{07}"))?.foreground == SIMD3(repeating: 255))
     }
@@ -51,7 +52,9 @@ struct PageFollowerTests {
         let (changes, change) = AsyncStream<Void>.makeStream()
         let probe = AsyncEventProbe<Int>()
         let task = SystemAppearance.askAgain(
-            after: changes, delays: [.milliseconds(150), .seconds(1)], clock: clock
+            after: changes,
+            delays: [.milliseconds(150), .seconds(1)],
+            clock: clock
         ) { probe.record(1) }
         change.yield()
         change.finish()
@@ -74,8 +77,11 @@ struct PageFollowerTests {
         var watch: SystemAppearance.Watch? = SystemAppearance.watch { probe.record(1) }
         DistributedNotificationCenter.default()
             .postNotificationName(
-                Notification.Name(SystemAppearance.notificationName), object: nil, userInfo: nil,
-                deliverImmediately: true)
+                Notification.Name(SystemAppearance.notificationName),
+                object: nil,
+                userInfo: nil,
+                deliverImmediately: true
+            )
         #expect(try await probe.wait(forAtLeast: 1, timeout: .seconds(10)) == [1])
         withExtendedLifetime(watch) {}
         watch = nil

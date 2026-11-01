@@ -38,8 +38,12 @@ struct BlockWriter {
     private var table: TableBuilder?
 
     init(
-        theme: MarkdownTheme, links: MarkdownLinks, highlighter: (any MarkdownCodeHighlighter)?, softBreaks: SoftBreaks,
-        width: Int, document: MarkdownDocument
+        theme: MarkdownTheme,
+        links: MarkdownLinks,
+        highlighter: (any MarkdownCodeHighlighter)?,
+        softBreaks: SoftBreaks,
+        width: Int,
+        document: MarkdownDocument
     ) {
         self.theme = theme
         self.links = links
@@ -92,8 +96,12 @@ struct BlockWriter {
                 let flags = ListFlags(rawValue: node.payload)
                 lists.append(
                     ListState(
-                        ordered: flags.contains(.ordered), parenthesis: flags.contains(.parenthesis), number: 1,
-                        depth: bulletDepth))
+                        ordered: flags.contains(.ordered),
+                        parenthesis: flags.contains(.parenthesis),
+                        number: 1,
+                        depth: bulletDepth
+                    )
+                )
                 tight.append(flags.contains(.tight))
             case .listItem:
                 beginBlock()
@@ -175,7 +183,8 @@ struct BlockWriter {
                     emitWrapped(
                         marker.map {
                             Piece(text: $0.text, style: $0.style, source: $0.source, isVerbatim: $0.source != nil)
-                        })
+                        }
+                    )
                 }
             case .infoString:
                 let word = document.source[node.range].prefix { $0 != 0x20 && $0 != 0x09 }

@@ -51,7 +51,12 @@ struct ShiftRowsTests {
         var buffer = ScreenBuffer(columns: 10, rows: 5)
         // Fill entire buffer with dots
         buffer.fill(
-            row: 0, col: 0, width: 10, height: 5, cell: Cell(character: ".", style: .default))
+            row: 0,
+            col: 0,
+            width: 10,
+            height: 5,
+            cell: Cell(character: ".", style: .default)
+        )
         // Write distinct content in the region (cols 2..6, rows 1..3)
         buffer.write("AAAA", row: 1, col: 2, style: .default)
         buffer.write("BBBB", row: 2, col: 2, style: .default)
@@ -111,7 +116,12 @@ struct ShiftRowsTests {
             // swiftlint:disable:next force_unwrapping
             let ch = Character(UnicodeScalar(65 + r)!)  // A, B, C, D, E
             buffer.fill(
-                row: r, col: 0, width: 3, height: 1, cell: Cell(character: ch, style: .default))
+                row: r,
+                col: 0,
+                width: 3,
+                height: 1,
+                cell: Cell(character: ch, style: .default)
+            )
         }
 
         buffer.shiftRows(regionY: 0, regionHeight: 5, regionX: 0, regionWidth: 3, delta: 2)

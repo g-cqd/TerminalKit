@@ -15,7 +15,11 @@ struct WindowedLayoutTests {
     }
 
     private func update(
-        _ layout: inout WindowedLayout<String>, width: Int = 10, revisions: [Int], keeping rows: Int = 0, calls: Calls
+        _ layout: inout WindowedLayout<String>,
+        width: Int = 10,
+        revisions: [Int],
+        keeping rows: Int = 0,
+        calls: Calls
     ) {
         layout.update(width: width, revisions: revisions, keepingFromEnd: rows) { item in
             calls.items.append(item)
@@ -24,7 +28,11 @@ struct WindowedLayoutTests {
     }
 
     private func window(
-        _ layout: inout WindowedLayout<String>, fromEnd: Int, rows: Int, revisions: [Int], calls: Calls
+        _ layout: inout WindowedLayout<String>,
+        fromEnd: Int,
+        rows: Int,
+        revisions: [Int],
+        calls: Calls
     ) -> [String] {
         layout.lines(fromEnd: fromEnd, rows: rows) { item in
             calls.items.append(item)
@@ -123,7 +131,8 @@ struct WindowedLayoutTests {
         update(&layout, revisions: revisions, keeping: 100, calls: calls)
         #expect(layout.isComplete && layout.rowCount == flat(revisions).count)
         #expect(
-            window(&layout, fromEnd: 0, rows: layout.rowCount, revisions: revisions, calls: calls) == flat(revisions))
+            window(&layout, fromEnd: 0, rows: layout.rowCount, revisions: revisions, calls: calls) == flat(revisions)
+        )
     }
 
     @Test func `a document cut below what was known starts again from its end`() {
@@ -135,7 +144,8 @@ struct WindowedLayoutTests {
         update(&layout, revisions: shorter, keeping: 3, calls: calls)
         #expect(calls.items == [19, 18])
         #expect(
-            window(&layout, fromEnd: 0, rows: 3, revisions: shorter, calls: calls) == Array(flat(shorter).suffix(3)))
+            window(&layout, fromEnd: 0, rows: 3, revisions: shorter, calls: calls) == Array(flat(shorter).suffix(3))
+        )
     }
 
     @Test func `empty items take no rows`() {
@@ -181,7 +191,8 @@ struct WindowedLayoutTests {
             let end = Swift.max(0, all.count - fromEnd)
             #expect(
                 layout.lines(fromEnd: fromEnd, rows: rows, layout: lines)
-                    == Array(all[Swift.max(0, end - rows) ..< end]))
+                    == Array(all[Swift.max(0, end - rows) ..< end])
+            )
             #expect(layout.rowCount <= all.count && (!layout.isComplete || layout.rowCount == all.count))
         }
     }

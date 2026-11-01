@@ -28,8 +28,10 @@ public struct MarkdownRenderer: Sendable {
 
     /// A renderer of `theme`, `links`, `highlighter` and `softBreaks`.
     public init(
-        theme: MarkdownTheme = .standard, links: MarkdownLinks = MarkdownLinks(),
-        highlighter: (any MarkdownCodeHighlighter)? = nil, softBreaks: SoftBreaks = .space
+        theme: MarkdownTheme = .standard,
+        links: MarkdownLinks = MarkdownLinks(),
+        highlighter: (any MarkdownCodeHighlighter)? = nil,
+        softBreaks: SoftBreaks = .space
     ) {
         self.theme = theme
         self.links = links
@@ -56,8 +58,13 @@ public struct MarkdownRenderer: Sendable {
             events = document.events(of: block)
         }
         var writer = BlockWriter(
-            theme: theme, links: links, highlighter: highlighter, softBreaks: softBreaks, width: width,
-            document: document)
+            theme: theme,
+            links: links,
+            highlighter: highlighter,
+            softBreaks: softBreaks,
+            width: width,
+            document: document
+        )
         while let event = events.next() { writer.handle(event) }
         walker = events
         return writer.lines.isEmpty ? [StyledLine()] : writer.lines

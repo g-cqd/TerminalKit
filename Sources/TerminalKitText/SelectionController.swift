@@ -107,7 +107,11 @@ public struct SelectionController<BlockID: Hashable & Sendable>: Sendable {
     /// A click. One clears the selection; two select the word under the pointer and three the line, completing a selection that
     /// may be copied.
     public mutating func click<Content: SelectableContent>(
-        row: Int, col: Int, count: Int, rows: RowMap<BlockID>, content: Content
+        row: Int,
+        col: Int,
+        count: Int,
+        rows: RowMap<BlockID>,
+        content: Content
     ) -> Update where Content.BlockID == BlockID {
         dragging = false
         let had = selection != nil
@@ -141,7 +145,10 @@ public enum ColumnSlicer {
         before: String, selected: String, after: String
     ) {
         let low = TextDisplayMetrics.characterOffset(
-            forDisplayColumn: max(0, columns.lowerBound), in: text, tabSize: tabSize)
+            forDisplayColumn: max(0, columns.lowerBound),
+            in: text,
+            tabSize: tabSize
+        )
         let high = max(
             low,
             TextDisplayMetrics.characterOffset(forDisplayColumn: max(0, columns.upperBound), in: text, tabSize: tabSize)

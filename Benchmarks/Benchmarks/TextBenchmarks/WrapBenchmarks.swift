@@ -10,17 +10,23 @@ private let prose = String(
             "The quick brown fox jumps over the lazy dog, and then reads a long answer that wraps at spaces. ",
         count: 60
     )
-    .prefix(4_096))
+    .prefix(4_096)
+)
 private let code = String(
     String(repeating: "    let result = try await session.run(arguments: [\"--flag\", value]) // comment\n", count: 60)
-        .prefix(4_096))
+        .prefix(4_096)
+)
 private let cjk = String(String(repeating: "日本語のテキストは二列で表示されます。English words too. ", count: 60).prefix(1_400))
 
 func registerWrapBenchmarks() {
     // One wrap per sample, reported as it is: not scaled like the per-grapheme suites.
     let configuration = Benchmark.Configuration(
-        metrics: [.wallClock, .mallocCountTotal], scalingFactor: .one, maxDuration: .seconds(1),
-        maxIterations: 1_000, thresholds: Thresholds.perSuite)
+        metrics: [.wallClock, .mallocCountTotal],
+        scalingFactor: .one,
+        maxDuration: .seconds(1),
+        maxIterations: 1_000,
+        thresholds: Thresholds.perSuite
+    )
     let bodies: [(name: String, text: String)] = [("prose", prose), ("code", code), ("CJK", cjk)]
     for (name, text) in bodies {
         for width in [80, 120] {

@@ -28,7 +28,8 @@ struct TerminalIdentityTests {
         #expect(TerminalIdentity(environment: ["KITTY_WINDOW_ID": "3", "TERM": "xterm-256color"]) == .kitty)
         #expect(TerminalIdentity(environment: ["TERM_PROGRAM": "tmux", "TERM": "screen-256color"]) == .unknown)
         #expect(
-            TerminalIdentity(environment: ["TMUX": "/tmp/tmux-501/default,1,0", "TERM_PROGRAM": "WezTerm"]) == .unknown)
+            TerminalIdentity(environment: ["TMUX": "/tmp/tmux-501/default,1,0", "TERM_PROGRAM": "WezTerm"]) == .unknown
+        )
         #expect(TerminalIdentity(environment: [:]) == .unknown)
     }
 
@@ -41,11 +42,13 @@ struct TerminalIdentityTests {
         #expect(TerminalIdentity.wezterm.dropsTheFirstClipboardWrite)
         #expect(
             !TerminalIdentity.kitty.dropsTheFirstClipboardWrite
-                && !TerminalIdentity.appleTerminal.dropsTheFirstClipboardWrite)
+                && !TerminalIdentity.appleTerminal.dropsTheFirstClipboardWrite
+        )
         #expect(TerminalIdentity.appleTerminal.nativeSelectionKey == "fn")
         #expect(
             TerminalIdentity.kitty.nativeSelectionKey == "Shift"
-                && TerminalIdentity.wezterm.nativeSelectionKey == "Shift")
+                && TerminalIdentity.wezterm.nativeSelectionKey == "Shift"
+        )
         #expect(TerminalIdentity.unknown.nativeSelectionKey == nil)
     }
 }
@@ -57,7 +60,8 @@ struct ClipboardPlanTests {
             var writer = ClipboardWriter(identity: identity)
             let plan = writer.plan(copying: "hello")
             #expect(
-                plan == ClipboardPlan(terminal: osc52("hello"), usePasteboard: false, outcome: .terminal), "\(identity)"
+                plan == ClipboardPlan(terminal: osc52("hello"), usePasteboard: false, outcome: .terminal),
+                "\(identity)"
             )
         }
     }
@@ -71,7 +75,8 @@ struct ClipboardPlanTests {
     @Test func `Terminal-app ignores OSC 52, so only the pasteboard is used`() {
         var writer = ClipboardWriter(identity: .appleTerminal)
         #expect(
-            writer.plan(copying: "hello") == ClipboardPlan(terminal: nil, usePasteboard: true, outcome: .pasteboard))
+            writer.plan(copying: "hello") == ClipboardPlan(terminal: nil, usePasteboard: true, outcome: .pasteboard)
+        )
     }
 
     @Test func `WezTerm drops the first write, so the first is sent twice and later ones once`() {
@@ -85,17 +90,20 @@ struct ClipboardPlanTests {
         var writer = ClipboardWriter(identity: .unknown)
         #expect(
             writer.plan(copying: "hello")
-                == ClipboardPlan(terminal: osc52("hello"), usePasteboard: true, outcome: .both))
+                == ClipboardPlan(terminal: osc52("hello"), usePasteboard: true, outcome: .both)
+        )
     }
 
     @Test func `over a remote connection the pasteboard is the other machine's, so it is never used`() {
         var unknown = ClipboardWriter(identity: .unknown, isRemote: true)
         #expect(
             unknown.plan(copying: "hello")
-                == ClipboardPlan(terminal: osc52("hello"), usePasteboard: false, outcome: .terminal))
+                == ClipboardPlan(terminal: osc52("hello"), usePasteboard: false, outcome: .terminal)
+        )
         var apple = ClipboardWriter(identity: .appleTerminal, isRemote: true)
         #expect(
-            apple.plan(copying: "hello") == ClipboardPlan(terminal: nil, usePasteboard: false, outcome: .unavailable))
+            apple.plan(copying: "hello") == ClipboardPlan(terminal: nil, usePasteboard: false, outcome: .unavailable)
+        )
     }
 
     @Test func `text over the measured ceiling is not sent as OSC 52, and uses the pasteboard if there is a local one`()
@@ -126,7 +134,8 @@ struct ClipboardPlanTests {
         let local = ClipboardWriter(environment: RecordedEnvironment.appleTerminal)
         #expect(local.identity == .appleTerminal && !local.isRemote)
         let remote = ClipboardWriter(
-            environment: RecordedEnvironment.kitty.merging(["SSH_CONNECTION": "1 2 3 4"]) { $1 })
+            environment: RecordedEnvironment.kitty.merging(["SSH_CONNECTION": "1 2 3 4"]) { $1 }
+        )
         #expect(remote.identity == .kitty && remote.isRemote)
     }
 }

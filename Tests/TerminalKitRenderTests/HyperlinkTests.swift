@@ -40,7 +40,9 @@ struct HyperlinkTests {
         let output = String(decoding: DiffRenderer.renderFull(buffer), as: UTF8.self)
         #expect(
             output.contains(
-                "\u{1B}]8;id=b3-0;file:///x\u{1B}\\ab\u{1B}]8;;\u{1B}\\ \u{1B}]8;id=b3-1;file:///x\u{1B}\\ab"))
+                "\u{1B}]8;id=b3-0;file:///x\u{1B}\\ab\u{1B}]8;;\u{1B}\\ \u{1B}]8;id=b3-1;file:///x\u{1B}\\ab"
+            )
+        )
     }
 
     @Test func `an id that could end the sequence is left out, and the link kept`() {

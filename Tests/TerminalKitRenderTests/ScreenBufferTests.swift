@@ -77,11 +77,26 @@ struct ScreenBufferTests {
         var buffer = ScreenBuffer(columns: 5, rows: 2)
 
         buffer.fill(
-            row: -1, col: 0, width: 2, height: 1, cell: Cell(character: "A", style: .default))
+            row: -1,
+            col: 0,
+            width: 2,
+            height: 1,
+            cell: Cell(character: "A", style: .default)
+        )
         buffer.fill(
-            row: 0, col: -1, width: 2, height: 1, cell: Cell(character: "B", style: .default))
+            row: 0,
+            col: -1,
+            width: 2,
+            height: 1,
+            cell: Cell(character: "B", style: .default)
+        )
         buffer.fill(
-            row: 2, col: 0, width: 2, height: 1, cell: Cell(character: "C", style: .default))
+            row: 2,
+            col: 0,
+            width: 2,
+            height: 1,
+            cell: Cell(character: "C", style: .default)
+        )
 
         #expect(buffer.cells.allSatisfy { $0 == .empty })
         #expect(buffer.dirty.isEmpty)

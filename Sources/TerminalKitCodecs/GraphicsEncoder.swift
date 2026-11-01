@@ -33,12 +33,17 @@ public enum GraphicsEncoder: Sendable {
 
             if isFirst {
                 result.append(
-                    contentsOf: buildChunk(control: controlPart, payload: chunk, more: hasMore))
+                    contentsOf: buildChunk(control: controlPart, payload: chunk, more: hasMore)
+                )
                 isFirst = false
             } else {
                 result.append(
                     contentsOf: buildChunk(
-                        control: "m=\(hasMore ? 1 : 0)", payload: chunk, more: false))
+                        control: "m=\(hasMore ? 1 : 0)",
+                        payload: chunk,
+                        more: false
+                    )
+                )
             }
 
             offset = end

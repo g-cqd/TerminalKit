@@ -16,12 +16,15 @@ public enum SystemAppearance {
     public static func watch(_ onChange: @escaping @Sendable () -> Void) -> Watch {
         Watch(
             DistributedNotificationCenter.default()
-                .addObserver(forName: Notification.Name(notificationName), object: nil, queue: nil) { _ in onChange() })
+                .addObserver(forName: Notification.Name(notificationName), object: nil, queue: nil) { _ in onChange() }
+        )
     }
 
     /// Calls `action` after each wait of `delays` whenever `changes` reports a change, until the task is cancelled or `changes` ends.
     public static func askAgain<C: Clock>(
-        after changes: AsyncStream<Void>, delays: [Duration] = askAgain, clock: C = ContinuousClock(),
+        after changes: AsyncStream<Void>,
+        delays: [Duration] = askAgain,
+        clock: C = ContinuousClock(),
         _ action: @escaping @Sendable () -> Void
     ) -> Task<Void, Never> where C.Duration == Duration {
         Task {

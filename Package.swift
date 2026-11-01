@@ -56,22 +56,26 @@ let package = Package(
     targets: [
         .target(
             name: "CTerminalSignals",
-            path: "Sources/CTerminalSignals"),
+            path: "Sources/CTerminalSignals"
+        ),
         .target(name: "TerminalKitCore", path: "Sources/TerminalKitCore", swiftSettings: strictSettings),
         .target(
             name: "TerminalKitTestSupport",
             path: "Sources/TerminalKitTestSupport",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         // Extracted from Atelier's Apps/KittyCode and Packages/AtelierCore. These three had no
         // sibling-module dependencies at all, which is what made them safe to move first.
         .target(
             name: "TerminalKitStyle",
             path: "Sources/TerminalKitStyle",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         .target(
             name: "TerminalKitIO",
             path: "Sources/TerminalKitIO",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         .target(
             name: "TerminalKitCodecs",
             dependencies: [
@@ -80,14 +84,16 @@ let package = Package(
                 "TerminalKitIO"
             ],
             path: "Sources/TerminalKitCodecs",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         .target(
             name: "TerminalKitRender",
             dependencies: [
                 "TerminalKitCodecs", "TerminalKitStyle", "TerminalKitIO", "TerminalKitText"
             ],
             path: "Sources/TerminalKitRender",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         .target(
             name: "TerminalKitInput",
             dependencies: [
@@ -95,24 +101,28 @@ let package = Package(
                 .product(name: "AemiKernel", package: "aemi")
             ],
             path: "Sources/TerminalKitInput",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         .target(
             name: "TerminalKitText",
             dependencies: [.product(name: "AemiText", package: "aemi")],
             path: "Sources/TerminalKitText",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         .target(
             name: "TerminalKitMarkdown",
             dependencies: [
                 "TerminalKitText", "TerminalKitStyle", .product(name: "AemiMarkdown", package: "AemiMarkdown")
             ],
             path: "Sources/TerminalKitMarkdown",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         .target(
             name: "TerminalKit",
             dependencies: ["TerminalKitCore"],
             path: "Sources/TerminalKit",
-            swiftSettings: strictSettings),
+            swiftSettings: strictSettings
+        ),
         .testTarget(
             name: "TerminalKitCoreTests",
             dependencies: ["TerminalKitCore", "TerminalKitTestSupport"],

@@ -82,7 +82,8 @@ extension BlockWriter {
             for column in 0 ..< count {
                 var pieces = column < header.count ? header[column] : []
                 pieces.append(
-                    Piece(text: ": ", style: theme.text.applying(theme.tableHeader), source: nil, isVerbatim: false))
+                    Piece(text: ": ", style: theme.text.applying(theme.tableHeader), source: nil, isVerbatim: false)
+                )
                 pieces += column < row.cells.count ? row.cells[column] : []
                 emitWrapped(pieces)
             }

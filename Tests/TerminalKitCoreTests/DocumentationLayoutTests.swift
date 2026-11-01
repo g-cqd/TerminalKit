@@ -5,7 +5,8 @@ import Testing
 struct DiaryLineBudgetTests {
     @Test func `every diary file is within the line budget`() throws {
         let over = try DocumentationLayout.diaryFilesExceedingLines(
-            DocumentationLayout.maximumDiaryLines)
+            DocumentationLayout.maximumDiaryLines
+        )
         #expect(
             over.isEmpty,
             """
@@ -31,7 +32,9 @@ struct DiaryLineBudgetTests {
 
         #expect(try DocumentationLayout.lineCount(of: url) == lines)
         let over = try DocumentationLayout.filesExceedingLines(
-            in: url.deletingLastPathComponent(), limit: lines)
+            in: url.deletingLastPathComponent(),
+            limit: lines
+        )
         #expect(over.isEmpty)
     }
 }
@@ -96,7 +99,8 @@ struct RecordNumberingTests {
         #expect(
             DocumentationLayout.repeatedNumbers(in: names) == [
                 "0003": ["0003-canonical-style-synced-from-aemi.md", "0003-decoder-allocated-per-keystroke.md"]
-            ])
+            ]
+        )
     }
 
     @Test func `no two decision records share a number`() throws {

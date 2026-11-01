@@ -37,7 +37,9 @@ struct TerminalPageTests {
 
     @Test func `a page is made from the colours a terminal answered with`() {
         let page = TerminalPage(
-            background: ColorRGB(r: 255, g: 255, b: 255), foreground: ColorRGB(r: 0, g: 0, b: 0))
+            background: ColorRGB(r: 255, g: 255, b: 255),
+            foreground: ColorRGB(r: 0, g: 0, b: 0)
+        )
         #expect(page == TerminalPage(background: SIMD3(255, 255, 255), foreground: .zero))
         #expect(
             TerminalPage(background: ColorRGB(r: 30, g: 30, b: 30), foreground: nil).foreground == SIMD3(repeating: 255)

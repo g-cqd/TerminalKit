@@ -44,11 +44,22 @@ public struct MarkdownTheme: Sendable, Equatable {
 
     /// A theme of the given styles; every glyph has the ``standard`` theme's default.
     public init(
-        text: Style = .default, headings: [Style] = [Style(bold: true)], emphasis: Style = Style(italic: true),
-        strong: Style = Style(bold: true), strikethrough: Style = Style(strikethrough: true), code: Style = .default,
-        codeBlock: Style = .default, codeLabel: Style = .default, link: Style = .default, linkTarget: Style = .default,
-        html: Style = .default, marker: Style = .default, quote: Style = .default, rule: Style = .default,
-        tableBorder: Style = .default, tableHeader: Style = Style(bold: true)
+        text: Style = .default,
+        headings: [Style] = [Style(bold: true)],
+        emphasis: Style = Style(italic: true),
+        strong: Style = Style(bold: true),
+        strikethrough: Style = Style(strikethrough: true),
+        code: Style = .default,
+        codeBlock: Style = .default,
+        codeLabel: Style = .default,
+        link: Style = .default,
+        linkTarget: Style = .default,
+        html: Style = .default,
+        marker: Style = .default,
+        quote: Style = .default,
+        rule: Style = .default,
+        tableBorder: Style = .default,
+        tableHeader: Style = Style(bold: true)
     ) {
         self.text = text
         self.headings = headings.isEmpty ? [.default] : headings
@@ -81,9 +92,16 @@ public struct MarkdownTheme: Sendable, Equatable {
             Style(fg: .indexed(5), bold: true, underline: .single), Style(fg: .indexed(5), bold: true),
             Style(fg: .indexed(5), bold: true, dim: false), Style(bold: true)
         ],
-        code: Style(fg: .indexed(6)), codeBlock: .default, codeLabel: Style(dim: true, italic: true),
-        link: Style(fg: .indexed(4), underline: .single), linkTarget: Style(dim: true), html: Style(dim: true),
-        marker: Style(fg: .indexed(3)), quote: Style(dim: true), rule: Style(dim: true), tableBorder: Style(dim: true)
+        code: Style(fg: .indexed(6)),
+        codeBlock: .default,
+        codeLabel: Style(dim: true, italic: true),
+        link: Style(fg: .indexed(4), underline: .single),
+        linkTarget: Style(dim: true),
+        html: Style(dim: true),
+        marker: Style(fg: .indexed(3)),
+        quote: Style(dim: true),
+        rule: Style(dim: true),
+        tableBorder: Style(dim: true)
     )
 
     /// No colour: bold headings, strong and header cells, italic emphasis, struck strikethrough, and everything else in the default style.

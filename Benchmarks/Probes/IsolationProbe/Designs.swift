@@ -189,8 +189,11 @@ struct ShippedRenderLoop: Design {
 
     func run(channel: Channel, recording: Recording, cost: Cost, deadline: UInt64) async -> Int {
         let loop = RenderLoop(
-            connection: DiscardingConnection(size: TerminalSize(columns: 120, rows: 40)), columns: 120, rows: 40,
-            composer: Composer(cost: cost, recording: recording))
+            connection: DiscardingConnection(size: TerminalSize(columns: 120, rows: 40)),
+            columns: 120,
+            rows: 40,
+            composer: Composer(cost: cost, recording: recording)
+        )
         let version =
             await Task.detached {
                 var state = ScreenState()

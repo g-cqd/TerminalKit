@@ -10,7 +10,10 @@ struct LayoutCacheTests {
     }
 
     private func update(
-        _ cache: inout LayoutCache<String>, width: Int = 10, revisions: [Int], calls: Calls
+        _ cache: inout LayoutCache<String>,
+        width: Int = 10,
+        revisions: [Int],
+        calls: Calls
     ) {
         cache.update(width: width, revisions: revisions) { item in
             calls.items.append(item)

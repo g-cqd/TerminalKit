@@ -242,8 +242,10 @@ public struct ScreenBuffer: Sendable {
     ///   - regionWidth: The number of columns in the region.
     ///   - delta: Number of rows to shift (positive = up, negative = down).
     public mutating func shiftRows(
-        regionY: Int, regionHeight: Int,
-        regionX: Int, regionWidth: Int,
+        regionY: Int,
+        regionHeight: Int,
+        regionX: Int,
+        regionWidth: Int,
         delta: Int
     ) {
         guard delta != 0, regionWidth > 0, regionHeight > 0, abs(delta) < regionHeight,

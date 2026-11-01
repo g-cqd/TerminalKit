@@ -2,7 +2,9 @@
 public enum TextDisplayMetrics {
     /// Converts a character offset within a line to a terminal display column.
     public static func displayColumn(
-        forCharacterOffset targetOffset: Int, in line: String, tabSize: Int = 4
+        forCharacterOffset targetOffset: Int,
+        in line: String,
+        tabSize: Int = 4
     ) -> Int {
         guard targetOffset > 0 else { return 0 }
 
@@ -21,7 +23,9 @@ public enum TextDisplayMetrics {
 
     /// Converts a terminal display column to the nearest character offset within a line.
     public static func characterOffset(
-        forDisplayColumn targetColumn: Int, in line: String, tabSize: Int = 4
+        forDisplayColumn targetColumn: Int,
+        in line: String,
+        tabSize: Int = 4
     ) -> Int {
         guard targetColumn > 0 else { return 0 }
 

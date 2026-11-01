@@ -17,7 +17,8 @@ import Testing
                 }
                 return width
             },
-            after: { TextDocument.computeMaxLineWidth(in: buffer) })
+            after: { TextDocument.computeMaxLineWidth(in: buffer) }
+        )
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["GDV_BENCH"] != nil))
@@ -26,12 +27,14 @@ import Testing
         let rope = Rope(bytes: data)
         let oldRoot = legacyBuild(data)
         compare(
-            "whole delete 8 MB", before: { legacyFullRemove(oldRoot).byteCount },
+            "whole delete 8 MB",
+            before: { legacyFullRemove(oldRoot).byteCount },
             after: {
                 var copy = rope
                 copy.remove(0 ..< copy.byteCount)
                 return copy.byteCount
-            })
+            }
+        )
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["GDV_BENCH"] != nil))
@@ -39,8 +42,10 @@ import Testing
         let data = Data(repeating: UInt8(ascii: "a"), count: 3_400_000)
         let lines = (0 ..< 100_000).map { "let value\($0 % 10) = 42\t// text" }
         compare(
-            "newline count 3.4 MB", before: { data.count(where: { $0 == 0x0A }) },
-            after: { Rope.countNewlines(in: data) })
+            "newline count 3.4 MB",
+            before: { data.count(where: { $0 == 0x0A }) },
+            after: { Rope.countNewlines(in: data) }
+        )
         compare(
             "display width 100k",
             before: {
@@ -51,10 +56,14 @@ import Testing
                     }
                     return width + column
                 }
-            }, after: { lines.reduce(0) { $0 + TextDisplayMetrics.displayWidth(of: $1) } })
+            },
+            after: { lines.reduce(0) { $0 + TextDisplayMetrics.displayWidth(of: $1) } }
+        )
         compare(
-            "rope build 3.4 MB", before: { legacyBuild(data).nodeHash },
-            after: { Rope(bytes: data).contentHash })
+            "rope build 3.4 MB",
+            before: { legacyBuild(data).nodeHash },
+            after: { Rope(bytes: data).contentHash }
+        )
 
         var rope = Rope()
         for count in [1_000, 10_000, 50_000, 200_000] {
@@ -73,7 +82,11 @@ import Testing
                     let start = ContinuousClock.now
                     if label == "before" {
                         legacy = legacyInsert(
-                            "abcde\n", into: legacy, path: &legacyPath, retained: &retained)
+                            "abcde\n",
+                            into: legacy,
+                            path: &legacyPath,
+                            retained: &retained
+                        )
                         oldSamples.append(milliseconds(start.duration(to: .now)) * 1_000)
                     } else {
                         rope.insert("abcde\n", atByteOffset: rope.byteCount)
@@ -115,7 +128,8 @@ import Testing
         let middle = data.count / 2
         return RopeNode.makeBranch(
             legacyBuild(data.subdata(in: 0 ..< middle)),
-            legacyBuild(data.subdata(in: middle ..< data.count)))
+            legacyBuild(data.subdata(in: middle ..< data.count))
+        )
     }
 
     private func legacyFullRemove(_ node: RopeNode) -> RopeNode {
@@ -143,7 +157,9 @@ import Testing
         var root = RopeNode.makeLeaf(Data(repeating: UInt8(ascii: "a"), count: rightSize))
         for size in leftSizes.reversed() {
             root = RopeNode.makeBranch(
-                RopeNode.makeLeaf(Data(repeating: UInt8(ascii: "a"), count: size)), root)
+                RopeNode.makeLeaf(Data(repeating: UInt8(ascii: "a"), count: size)),
+                root
+            )
             retained.append(root)
         }
         return root
@@ -151,7 +167,9 @@ import Testing
 
     /// The previous right-spine rebuild, with an explicit path and retained nodes to avoid stack exhaustion in ARC.
     private func legacyInsert(
-        _ string: String, into node: RopeNode, path: inout ContiguousArray<RopeNode>,
+        _ string: String,
+        into node: RopeNode,
+        path: inout ContiguousArray<RopeNode>,
         retained: inout ContiguousArray<RopeNode>
     ) -> RopeNode {
         path.removeAll(keepingCapacity: true)

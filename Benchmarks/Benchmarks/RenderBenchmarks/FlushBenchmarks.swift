@@ -48,7 +48,9 @@ func registerFlushBenchmarks(_ size: ScreenSize) {
 @MainActor private func warmedPipeline(_ size: ScreenSize, _ line: String) -> RenderPipeline {
     let pipeline = RenderPipeline(
         connection: DiscardingConnection(size: TerminalSize(columns: size.columns, rows: size.rows)),
-        columns: size.columns, rows: size.rows)
+        columns: size.columns,
+        rows: size.rows
+    )
     size.fill(&pipeline.buffer, with: line)
     try? pipeline.forceRedraw()
     return pipeline

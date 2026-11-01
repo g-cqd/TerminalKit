@@ -37,8 +37,10 @@ struct RowWrapGlyphTests {
                         // Most pieces are plain ASCII, as code is.
                         let pool = next() % 2 == 0 ? Array(alphabet.prefix(7)) : alphabet
                         return piece(
-                            (0 ..< Int(next() % 12)).map { _ in pool[Int(next() % UInt64(pool.count))] }.joined())
-                    })
+                            (0 ..< Int(next() % 12)).map { _ in pool[Int(next() % UInt64(pool.count))] }.joined()
+                        )
+                    }
+            )
         }
         return result
     }

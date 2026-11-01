@@ -17,7 +17,8 @@ struct MarkdownBlockTests {
         #expect(
             Rendered.rows("# Head\n\none\ntwo  \nthree\n\n---\n", width: 10) == [
                 "Head", "", "one two", "three", "", "──────────"
-            ])
+            ]
+        )
     }
 
     @Test func `with soft breaks as line breaks, a paragraph keeps its writer's lines, but a code span does not`() {
@@ -36,7 +37,8 @@ struct MarkdownBlockTests {
         #expect(
             Rendered.rows("- one two three\n- four\n  - five\n", width: 9) == [
                 "• one two", "  three", "• four", "  ◦ five"
-            ])
+            ]
+        )
         #expect(Rendered.rows("7) seven\n8) eight\n") == ["7) seven", "8) eight"])
         #expect(Rendered.rows("1. a\n\n2. b\n") == ["1. a", "", "2. b"])
         #expect(Rendered.rows("- [x] done\n- [ ] open\n") == ["• [x] done", "• [ ] open"])

@@ -50,7 +50,8 @@ struct RenderPipelineAllocationTests {
             measuredFlushes { frame in
                 paint(frame)
                 pipeline.scrollHint = ScrollHint(regionTop: 0, regionHeight: 60, delta: 1)
-            })
+            }
+        )
         #expect(count == 0, "scrolled flushes allocated \(count) times")
     }
 

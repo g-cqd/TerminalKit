@@ -39,7 +39,8 @@ public final class InputSource: Sendable {
         // Unbounded: every keystroke must arrive in order, even from a fast paste under load.
         let (stream, cont) = AsyncStream<InputEvent>
             .makeStream(
-                bufferingPolicy: .unbounded)
+                bufferingPolicy: .unbounded
+            )
         self._events = stream
         self.continuation = cont
     }
@@ -54,8 +55,12 @@ public final class InputSource: Sendable {
         let completion = InputCompletion()
         if let waker = InputWaker() {
             let loop = InputLoop(
-                connection: connection, continuation: continuation, unambiguousEscape: unambiguousEscape,
-                stopped: stopped, waker: waker)
+                connection: connection,
+                continuation: continuation,
+                unambiguousEscape: unambiguousEscape,
+                stopped: stopped,
+                waker: waker
+            )
             let thread = Thread {
                 loop.run()
                 completion.finish()

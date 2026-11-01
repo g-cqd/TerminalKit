@@ -29,7 +29,8 @@ struct TerminalSizeBoundsTests {
         let size = TerminalSize(columns: 65_535, rows: 65_535, pixelWidth: 65_535, pixelHeight: 65_535)
         #expect(
             TerminalCapabilities.clampedSize(size)
-                == TerminalSize(columns: 1_024, rows: 512, pixelWidth: 1_024, pixelHeight: 512))
+                == TerminalSize(columns: 1_024, rows: 512, pixelWidth: 1_024, pixelHeight: 512)
+        )
     }
 
     @Test

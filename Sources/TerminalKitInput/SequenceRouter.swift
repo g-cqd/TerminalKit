@@ -206,7 +206,8 @@ public struct SequenceRouter: Sendable {
                             terminatorProgress = 0
                         } else if let keyCode = Self.csiTildeKeyCode(for: firstParam) {
                             events.append(
-                                .key(KeyEvent(keyCode: keyCode, modifiers: mods, eventType: eventType)))
+                                .key(KeyEvent(keyCode: keyCode, modifiers: mods, eventType: eventType))
+                            )
                             resetRouting()
                         } else {
                             events.append(.unknown(buffer))
@@ -215,7 +216,8 @@ public struct SequenceRouter: Sendable {
                     default:
                         if let keyCode = Self.csiKeyCode(for: byte) {
                             events.append(
-                                .key(KeyEvent(keyCode: keyCode, modifiers: mods, eventType: eventType)))
+                                .key(KeyEvent(keyCode: keyCode, modifiers: mods, eventType: eventType))
+                            )
                         } else {
                             events.append(.unknown(buffer))
                         }

@@ -27,7 +27,8 @@ struct MarkdownTableTests {
         #expect(
             Rendered.rows(table, width: 14) == [
                 "Name: alpha", "Size: 1", "Notes: the", "first row", "", "Name: b", "Size: 22", "Notes: x"
-            ])
+            ]
+        )
     }
 
     @Test func `share keeps each column between its least and natural width and fills what is available`() {

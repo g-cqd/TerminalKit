@@ -29,7 +29,8 @@ struct PointerRecognizerAllocationTests {
             events: [
                 MouseEvent(button: .left, row: 20, col: 40, kind: .press),
                 MouseEvent(button: .left, row: 20, col: 40, kind: .release)
-            ]),
+            ]
+        ),
         Workload(
             name: "a drag across the screen",
             events: [
@@ -38,7 +39,8 @@ struct PointerRecognizerAllocationTests {
                 MouseEvent(button: .left, row: 9, col: 30, kind: .drag),
                 MouseEvent(button: .left, row: 12, col: 60, kind: .drag),
                 MouseEvent(button: .left, row: 12, col: 60, kind: .release)
-            ]),
+            ]
+        ),
         Workload(name: "a wheel step", events: [MouseEvent(button: .scrollDown, row: 20, col: 40, kind: .press)]),
         Workload(name: "motion with no button", events: [MouseEvent(button: .release, row: 20, col: 40, kind: .motion)])
     ]
@@ -63,7 +65,8 @@ struct PointerRecognizerAllocationTests {
                         recognizer.handle(event, at: now, in: regions) { _ in emitted += 1 }
                     }
                 }
-            })
+            }
+        )
         #expect(count == 0, "\(rounds) rounds allocated \(count) times")
         if workload.name != "motion with no button" {
             #expect(emitted > 0, "the workload produced no pointer event, so it measured nothing")
@@ -84,7 +87,8 @@ struct PointerRecognizerAllocationTests {
                         found += 1
                     }
                 }
-            })
+            }
+        )
         #expect(count == 0 && found > 0)
         let rebuilt = try #require(
             minimumAllocations(repeats: 5) {
@@ -92,7 +96,8 @@ struct PointerRecognizerAllocationTests {
                 for index in 0 ..< 120 {
                     regions.add(index, at: CellRect(row: index % 40, col: (index / 40) * 26, rows: 1, cols: 26))
                 }
-            })
+            }
+        )
         #expect(rebuilt == 0, "re-adding 120 regions after removeAll allocated \(rebuilt) times")
     }
 }

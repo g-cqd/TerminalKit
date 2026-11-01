@@ -155,15 +155,20 @@ public struct MouseDecoder: Sendable {
 
         guard pixelMode else {
             return MouseEvent(
-                button: button, modifiers: mods,
-                row: coordY, col: coordX,
+                button: button,
+                modifiers: mods,
+                row: coordY,
+                col: coordX,
                 kind: kind
             )
         }
         return MouseEvent(
-            button: button, modifiers: mods,
-            row: 0, col: 0,
-            pixelX: coordX, pixelY: coordY,
+            button: button,
+            modifiers: mods,
+            row: 0,
+            col: 0,
+            pixelX: coordX,
+            pixelY: coordY,
             kind: kind
         )
     }

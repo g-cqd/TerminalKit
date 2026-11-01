@@ -110,7 +110,9 @@ public enum SGREncoder: Sendable {
 
     /// Encodes the minimal SGR diff into a caller-provided buffer (zero-allocation path).
     public static func encodeDiff(
-        from old: Style, to new: Style, into params: inout ContiguousArray<UInt8>
+        from old: Style,
+        to new: Style,
+        into params: inout ContiguousArray<UInt8>
     ) {
         if old == new { return }
         if new == .default {
@@ -230,7 +232,10 @@ public enum SGREncoder: Sendable {
     }
 
     private static func appendColor(
-        _ bytes: inout ContiguousArray<UInt8>, _ color: Color, foreground: Bool, first: inout Bool
+        _ bytes: inout ContiguousArray<UInt8>,
+        _ color: Color,
+        foreground: Bool,
+        first: inout Bool
     ) {
         switch color {
             case .default:
@@ -278,7 +283,9 @@ public enum SGREncoder: Sendable {
     }
 
     private static func appendUnderlineColor(
-        _ bytes: inout ContiguousArray<UInt8>, _ color: Color, first: inout Bool
+        _ bytes: inout ContiguousArray<UInt8>,
+        _ color: Color,
+        first: inout Bool
     ) {
         appendSep(&bytes, &first)
         switch color {

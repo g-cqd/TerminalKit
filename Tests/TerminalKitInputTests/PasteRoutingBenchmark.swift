@@ -41,7 +41,11 @@ struct PasteRoutingBenchmark {
         print(
             String(
                 format: "BENCH paste routing, 1 MiB in 4 KiB reads: median %.3f ms, p10 %.3f, p90 %.3f, n %d",
-                milliseconds[milliseconds.count / 2], milliseconds[milliseconds.count / 10],
-                milliseconds[milliseconds.count * 9 / 10], milliseconds.count))
+                milliseconds[milliseconds.count / 2],
+                milliseconds[milliseconds.count / 10],
+                milliseconds[milliseconds.count * 9 / 10],
+                milliseconds.count
+            )
+        )
     }
 }

@@ -244,7 +244,9 @@ public enum EscapeSequences: Sendable {
     /// Call `appendResetScrollRegion` to restore full-screen scrolling.
     @inline(__always)
     public static func appendSetScrollRegion(
-        top: Int, bottom: Int, to bytes: inout ContiguousArray<UInt8>
+        top: Int,
+        bottom: Int,
+        to bytes: inout ContiguousArray<UInt8>
     ) {
         // CSI top ; bottom r
         bytes.append(0x1b)

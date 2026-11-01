@@ -52,7 +52,9 @@ import Testing
     /// Times `work` with the previous read and the current one, alternating which goes first, 31 rounds each, and
     /// prints the median with p10 and p90.
     private func compare(
-        _ name: String, unit: String, _ work: ((Rope, Range<Int>) -> [String]) -> Int
+        _ name: String,
+        unit: String,
+        _ work: ((Rope, Range<Int>) -> [String]) -> Int
     ) {
         var before: [Double] = []
         var after: [Double] = []

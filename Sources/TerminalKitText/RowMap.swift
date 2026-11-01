@@ -113,15 +113,20 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
         if relative >= 0, segment.isLinear {
             let characters = segment.text.count
             let under = TextDisplayMetrics.characterOffset(
-                forDisplayColumn: relative, in: segment.text, tabSize: tabSize)
+                forDisplayColumn: relative,
+                in: segment.text,
+                tabSize: tabSize
+            )
             offset = edge == .trailing && under < characters ? under + 1 : under
         } else if relative >= 0 {
             let past = relative >= TextDisplayMetrics.displayWidth(of: segment.text, tabSize: tabSize)
             offset = edge == .trailing || past ? segment.sourceCount : 0
         }
         let position = ContentPosition(
-            block: source.block, line: segment.line,
-            offset: Self.reaching(segment.firstOffset + offset, in: source.segments, at: index, edge: edge))
+            block: source.block,
+            line: segment.line,
+            offset: Self.reaching(segment.firstOffset + offset, in: source.segments, at: index, edge: edge)
+        )
         return LocatedPosition(position: position, ordinal: source.ordinal)
     }
 
@@ -168,7 +173,9 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
     /// Only the intersection with what is on screen is returned, so a selection that is partly scrolled out of view highlights what
     /// is visible and keeps the rest anchored in the content. A row of an empty line has no cells and so no span.
     public func highlights<Content: SelectableContent>(
-        of selection: ContentSelection<BlockID>, in content: Content, tabSize: Int = 4
+        of selection: ContentSelection<BlockID>,
+        in content: Content,
+        tabSize: Int = 4
     ) -> [HighlightSpan] where Content.BlockID == BlockID {
         guard !selection.isCollapsed, let (start, end) = selection.resolved(in: content) else { return [] }
         var spans: [HighlightSpan] = []
@@ -209,11 +216,17 @@ public struct RowMap<BlockID: Hashable & Sendable>: Sendable {
         let startCol =
             segment.col
             + TextDisplayMetrics.displayColumn(
-                forCharacterOffset: from - segment.firstOffset, in: segment.text, tabSize: tabSize)
+                forCharacterOffset: from - segment.firstOffset,
+                in: segment.text,
+                tabSize: tabSize
+            )
         let endCol =
             segment.col
             + TextDisplayMetrics.displayColumn(
-                forCharacterOffset: to - segment.firstOffset, in: segment.text, tabSize: tabSize)
+                forCharacterOffset: to - segment.firstOffset,
+                in: segment.text,
+                tabSize: tabSize
+            )
         return startCol ..< Swift.max(startCol, endCol)
     }
 }
@@ -253,7 +266,8 @@ extension ContentSelection {
         while high < characters.count, CharacterClass(characters[high]) == kind { high += 1 }
         return Self(
             anchor: ContentPosition(block: position.block, line: position.line, offset: low),
-            head: ContentPosition(block: position.block, line: position.line, offset: high))
+            head: ContentPosition(block: position.block, line: position.line, offset: high)
+        )
     }
 
     /// The whole line around a position, for a triple click. Nil when the block is gone or the line does not exist.
@@ -266,6 +280,7 @@ extension ContentSelection {
         let length = content.line(position.line, ofBlockAt: ordinal).count
         return Self(
             anchor: ContentPosition(block: position.block, line: position.line, offset: 0),
-            head: ContentPosition(block: position.block, line: position.line, offset: length))
+            head: ContentPosition(block: position.block, line: position.line, offset: length)
+        )
     }
 }

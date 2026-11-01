@@ -68,7 +68,8 @@
                     let elapsed = start.duration(to: .now)
                     milliseconds.append(
                         (Double(elapsed.components.seconds) * 1_000
-                            + Double(elapsed.components.attoseconds) / 1e15) / 24)
+                            + Double(elapsed.components.attoseconds) / 1e15) / 24
+                    )
                 }
                 milliseconds.sort()
                 print(

@@ -123,7 +123,8 @@ public final class TerminalSession: Sendable {
         guard let push else { return false }
         if push {
             try? connection.writeContiguous(
-                ContiguousArray(EscapeSequences.pushKeyboardMode(flags: requested.kittyKeyboardFlags)))
+                ContiguousArray(EscapeSequences.pushKeyboardMode(flags: requested.kittyKeyboardFlags))
+            )
         }
         return true
     }

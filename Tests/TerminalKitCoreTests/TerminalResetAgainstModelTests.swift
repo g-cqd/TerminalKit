@@ -26,7 +26,9 @@ struct TerminalResetAgainstModelTests {
 
         #expect(!model.isAlternateScreen, "still on the alternate screen")
         #expect(
-            model.hasNoPrivateModesEnabled, "left private modes enabled: \(model.enabledPrivateModes)")
+            model.hasNoPrivateModesEnabled,
+            "left private modes enabled: \(model.enabledPrivateModes)"
+        )
         #expect(!model.isBracketedPasteEnabled, "bracketed paste left enabled")
         #expect(model.isCursorVisible, "cursor left hidden")
         #expect(model.isAtDefaultGraphicRendition, "colour or attributes left set")
@@ -56,9 +58,13 @@ struct TerminalResetAgainstModelTests {
         model.consume(TerminalResetLadder.escapeBytes(for: .softReset))
 
         #expect(
-            model.enabledPrivateModes == before, "DECSTR changed the private modes, which it must not")
+            model.enabledPrivateModes == before,
+            "DECSTR changed the private modes, which it must not"
+        )
         #expect(
-            model.isAlternateScreen, "DECSTR left the alternate screen, contradicting three emulators")
+            model.isAlternateScreen,
+            "DECSTR left the alternate screen, contradicting three emulators"
+        )
     }
 
     @Test func `the soft tier still restores the cursor and the rendition`() {
@@ -79,7 +85,8 @@ struct TerminalResetAgainstModelTests {
 
         #expect(
             model.scrollbackLines == before,
-            "DECSTR destroyed scrollback, which is the one thing it must not do")
+            "DECSTR destroyed scrollback, which is the one thing it must not do"
+        )
     }
 
     @Test func `the soft tier spares the screen contents`() {
@@ -107,7 +114,8 @@ struct TerminalResetAgainstModelTests {
 
         #expect(
             model.hasNoPrivateModesEnabled,
-            "the full ladder left private modes enabled: \(model.enabledPrivateModes)")
+            "the full ladder left private modes enabled: \(model.enabledPrivateModes)"
+        )
         #expect(!model.isAlternateScreen)
         #expect(!model.isBracketedPasteEnabled)
         #expect(model.isCursorVisible)

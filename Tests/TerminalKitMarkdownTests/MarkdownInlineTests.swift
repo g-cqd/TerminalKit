@@ -30,7 +30,8 @@ struct MarkdownInlineTests {
         let resolving = MarkdownLinks(resolve: { "file:///repo/" + $0 })
         #expect(
             Rendered.run("file", in: "[file](Sources/a.swift)", links: resolving)?.style.link
-                == "file:///repo/Sources/a.swift")
+                == "file:///repo/Sources/a.swift"
+        )
         let unsafe = MarkdownLinks(resolve: { _ in "file:///a b" })
         #expect(Rendered.run("file", in: "[file](x)", links: unsafe)?.style.link == nil)
     }
@@ -39,7 +40,8 @@ struct MarkdownInlineTests {
         #expect(
             Rendered.rows("[https://bank.example](https://evil.example/login)") == [
                 "https://bank.example (https://evil.example/login)"
-            ])
+            ]
+        )
         #expect(Rendered.rows("[www.bank.example](https://bank.example/a)") == ["www.bank.example"])
         #expect(Rendered.rows("[the docs](https://evil.example)") == ["the docs"])
         let different = MarkdownLinks(targets: .whenDifferent)
@@ -48,7 +50,9 @@ struct MarkdownInlineTests {
         let never = MarkdownLinks(targets: .never)
         #expect(Rendered.rows("[https://bank.example](https://evil.example)", links: never) == ["https://bank.example"])
         let target = Rendered.run(
-            "https://evil.example/login", in: "[https://bank.example](https://evil.example/login)")
+            "https://evil.example/login",
+            in: "[https://bank.example](https://evil.example/login)"
+        )
         #expect(target?.source == nil)
     }
 
@@ -59,7 +63,8 @@ struct MarkdownInlineTests {
         #expect(
             Rendered.rows("see www.example.com now", links: MarkdownLinks(targets: .always)) == [
                 "see www.example.com now"
-            ])
+            ]
+        )
     }
 
     @Test func `an image shows its alt text in brackets`() {

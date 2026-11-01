@@ -15,8 +15,14 @@ struct PackedCellTests {
 
     @Test func `a cell reads back as it was stored, whatever its grapheme and style`() {
         let style = Style(
-            fg: .rgb(r: 1, g: 2, b: 3), bg: .indexed(200), underlineColor: .indexed(9), bold: true,
-            italic: true, underline: .curly, inverse: true)
+            fg: .rgb(r: 1, g: 2, b: 3),
+            bg: .indexed(200),
+            underlineColor: .indexed(9),
+            bold: true,
+            italic: true,
+            underline: .curly,
+            inverse: true
+        )
         for character: Character in ["a", "é", "e\u{301}", "漢", "\u{1F1EB}\u{1F1F7}", "👍🏽", family] {
             var buffer = ScreenBuffer(columns: 4, rows: 1)
             buffer[0, 0] = Cell(character: character, style: style, width: 2)

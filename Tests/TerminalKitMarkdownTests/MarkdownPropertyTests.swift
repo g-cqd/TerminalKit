@@ -72,11 +72,14 @@ struct MarkdownPropertyTests {
                 for run in renderer.lines(of: document, width: width).flatMap(\.runs) {
                     guard let source = run.source else { continue }
                     let written = String(
-                        decoding: document.source[source].map { $0 == 0x09 ? 0x20 : $0 }, as: UTF8.self)
+                        decoding: document.source[source].map { $0 == 0x09 ? 0x20 : $0 },
+                        as: UTF8.self
+                    )
                     let decoded = String(decoding: document.decode(source), as: UTF8.self)
                     #expect(
                         run.text == written || run.text == decoded || run.text.allSatisfy { $0 == " " },
-                        "\(markdown.debugDescription): \(run.text.debugDescription) for \(written.debugDescription)")
+                        "\(markdown.debugDescription): \(run.text.debugDescription) for \(written.debugDescription)"
+                    )
                     #expect(!run.text.unicodeScalars.contains(where: TextSanitizer.isControl))
                 }
             }

@@ -79,7 +79,9 @@ public struct PointerRecognizer<ID: Hashable & Sendable>: Sendable {
     ///   - regions: What the host drew, to find the target under the pointer.
     ///   - emit: Called for each thing the pointer did, in order. Does not escape.
     public mutating func handle(
-        _ event: MouseEvent, at now: ContinuousClock.Instant, in regions: RegionMap<ID>,
+        _ event: MouseEvent,
+        at now: ContinuousClock.Instant,
+        in regions: RegionMap<ID>,
         emit: (PointerEvent<ID>) -> Void
     ) {
         guard event.row >= 1, event.col >= 1 else { return }
@@ -89,16 +91,24 @@ public struct PointerRecognizer<ID: Hashable & Sendable>: Sendable {
             guard let direction = Self.direction(of: event.button) else { return }
             emit(
                 .wheel(
-                    target: regions.hit(row: cell.row, col: cell.col), cell: cell, direction: direction,
-                    modifiers: event.modifiers))
+                    target: regions.hit(row: cell.row, col: cell.col),
+                    cell: cell,
+                    direction: direction,
+                    modifiers: event.modifiers
+                )
+            )
             return
         }
 
         switch event.kind {
             case .press:
                 press = Press(
-                    button: event.button, cell: cell, target: regions.hit(row: cell.row, col: cell.col),
-                    modifiers: event.modifiers, dragging: false)
+                    button: event.button,
+                    cell: cell,
+                    target: regions.hit(row: cell.row, col: cell.col),
+                    modifiers: event.modifiers,
+                    dragging: false
+                )
             case .drag:
                 guard var held = press else { return }
                 if !held.dragging {
@@ -107,7 +117,12 @@ public struct PointerRecognizer<ID: Hashable & Sendable>: Sendable {
                     press = held
                     emit(
                         .dragBegan(
-                            target: held.target, origin: held.cell, button: held.button, modifiers: held.modifiers))
+                            target: held.target,
+                            origin: held.cell,
+                            button: held.button,
+                            modifiers: held.modifiers
+                        )
+                    )
                 }
                 emit(.dragMoved(to: cell))
             case .release:
@@ -120,14 +135,24 @@ public struct PointerRecognizer<ID: Hashable & Sendable>: Sendable {
                     // gesture is only known to have been a drag from where it ended.
                     emit(
                         .dragBegan(
-                            target: held.target, origin: held.cell, button: held.button, modifiers: held.modifiers))
+                            target: held.target,
+                            origin: held.cell,
+                            button: held.button,
+                            modifiers: held.modifiers
+                        )
+                    )
                     emit(.dragEnded(at: cell))
                 } else if regions.hit(row: cell.row, col: cell.col) == held.target {
                     let count = clickCount(for: held, at: now)
                     emit(
                         .click(
-                            target: held.target, cell: held.cell, button: held.button, modifiers: held.modifiers,
-                            count: count))
+                            target: held.target,
+                            cell: held.cell,
+                            button: held.button,
+                            modifiers: held.modifiers,
+                            count: count
+                        )
+                    )
                 }
             case .motion:
                 return

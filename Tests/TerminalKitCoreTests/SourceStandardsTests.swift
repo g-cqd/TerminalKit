@@ -66,7 +66,9 @@ struct SourceStandardsTests {
     /// A test that yields, sleeps or polls is a test that can pass for the wrong reason.
     @Test func `no test yields or sleeps`() throws {
         let offenders = try SourceStandards.occurrences(
-            of: "Task.yield", in: SourceStandards.tests)
+            of: "Task.yield",
+            in: SourceStandards.tests
+        )
         #expect(
             offenders.isEmpty,
             """

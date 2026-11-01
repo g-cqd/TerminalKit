@@ -63,12 +63,17 @@ struct InlineCollector {
             case .entity:
                 pieces.append(
                     Piece(
-                        text: Self.string(document.decode(node.range)), style: style, source: node.range,
-                        isVerbatim: false))
+                        text: Self.string(document.decode(node.range)),
+                        style: style,
+                        source: node.range,
+                        isVerbatim: false
+                    )
+                )
             case .softBreak where softBreaks == .space || codeDepth > 0: chrome(" ", style)
             case .softBreak, .hardBreak:
                 pieces.append(
-                    codeDepth > 0 ? Piece(text: " ", style: style, source: nil, isVerbatim: false) : .lineBreak())
+                    codeDepth > 0 ? Piece(text: " ", style: style, source: nil, isVerbatim: false) : .lineBreak()
+                )
             case .taskMarker: chrome(node.payload == 1 ? "[x] " : "[ ] ", theme.marker)
             case .footnoteReference:
                 chrome("[^", theme.marker)

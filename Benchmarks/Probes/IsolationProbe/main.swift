@@ -26,13 +26,23 @@ let scenarios: [Scenario] = [
     Scenario(label: "500 lines/s, 2 ms composer", cost: Cost(base: 2_000), updatesPerSecond: 500, mainBusy: false),
     Scenario(label: "5000 lines/s, 2 ms composer", cost: Cost(base: 2_000), updatesPerSecond: 5_000, mainBusy: false),
     Scenario(
-        label: "500 lines/s, cheap composer, main actor 50% busy", cost: Cost(), updatesPerSecond: 500, mainBusy: true),
+        label: "500 lines/s, cheap composer, main actor 50% busy",
+        cost: Cost(),
+        updatesPerSecond: 500,
+        mainBusy: true
+    ),
     Scenario(
-        label: "500 lines/s, 2 ms composer, main actor 50% busy", cost: Cost(base: 2_000), updatesPerSecond: 500,
-        mainBusy: true),
+        label: "500 lines/s, 2 ms composer, main actor 50% busy",
+        cost: Cost(base: 2_000),
+        updatesPerSecond: 500,
+        mainBusy: true
+    ),
     Scenario(
         label: "500 lines/s, 0.1 ms composer, a 40 ms frame every 100 lines",
-        cost: Cost(base: 100, spike: 40_000, spikeEvery: 100), updatesPerSecond: 500, mainBusy: false)
+        cost: Cost(base: 100, spike: 40_000, spikeEvery: 100),
+        updatesPerSecond: 500,
+        mainBusy: false
+    )
 ]
 
 func percentile(_ values: [Double], _ fraction: Double) -> Double {
@@ -97,7 +107,11 @@ for scenario in scenarios {
         }
         let cpuBefore = clock_gettime_nsec_np(CLOCK_PROCESS_CPUTIME_ID)
         let finalVersion = await design.run(
-            channel: channel, recording: recording, cost: scenario.cost, deadline: deadline)
+            channel: channel,
+            recording: recording,
+            cost: scenario.cost,
+            deadline: deadline
+        )
         await busy?.value
         let cpu = Double(clock_gettime_nsec_np(CLOCK_PROCESS_CPUTIME_ID) &- cpuBefore) / 1e6 / seconds
         let report = recording.report(finalVersion: finalVersion, deadline: deadline)

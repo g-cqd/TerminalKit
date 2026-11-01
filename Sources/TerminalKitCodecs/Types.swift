@@ -174,8 +174,13 @@ public struct GraphicsCommand: Sendable, Equatable {
         public var rows: UInt32
 
         public init(
-            id: UInt32, zIndex: Int32 = 0, xOffset: UInt32 = 0, yOffset: UInt32 = 0, keepsCursor: Bool = true,
-            columns: UInt32 = 0, rows: UInt32 = 0
+            id: UInt32,
+            zIndex: Int32 = 0,
+            xOffset: UInt32 = 0,
+            yOffset: UInt32 = 0,
+            keepsCursor: Bool = true,
+            columns: UInt32 = 0,
+            rows: UInt32 = 0
         ) {
             self.id = id
             self.zIndex = zIndex

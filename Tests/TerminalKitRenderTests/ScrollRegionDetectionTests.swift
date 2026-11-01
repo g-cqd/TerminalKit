@@ -35,11 +35,17 @@ struct ScrollRegionDetectionTests {
         for offset in 0 ..< Self.rows - 1 {
             pipeline.buffer.write(
                 padded(line(first + offset)),
-                row: offset, col: 0, style: .default)
+                row: offset,
+                col: 0,
+                style: .default
+            )
         }
         pipeline.buffer.write(
             padded(status),
-            row: Self.rows - 1, col: 0, style: .default)
+            row: Self.rows - 1,
+            col: 0,
+            style: .default
+        )
         mock.clearOutput()
         try pipeline.flush()
         let output = mock.writtenOutput

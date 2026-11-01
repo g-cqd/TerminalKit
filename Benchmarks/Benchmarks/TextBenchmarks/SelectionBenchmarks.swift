@@ -26,7 +26,8 @@ private func screen(_ text: String) -> (content: Content, map: RowMap<Int>) {
         for (line, content) in lines.enumerated() where row < screenRows {
             map.set(
                 row: row,
-                to: RowProvenance(block: ordinal, ordinal: ordinal, line: line, firstOffset: 0, col: 2, text: content))
+                to: RowProvenance(block: ordinal, ordinal: ordinal, line: line, firstOffset: 0, col: 2, text: content)
+            )
             row += 1
         }
         row += 1
@@ -37,11 +38,19 @@ private func screen(_ text: String) -> (content: Content, map: RowMap<Int>) {
 func registerSelectionBenchmarks() {
     let perSample = 1_000
     let scaled = Benchmark.Configuration(
-        metrics: [.wallClock, .mallocCountTotal], scalingFactor: .kilo, maxDuration: .seconds(1),
-        maxIterations: 1_000, thresholds: Thresholds.perSuite)
+        metrics: [.wallClock, .mallocCountTotal],
+        scalingFactor: .kilo,
+        maxDuration: .seconds(1),
+        maxIterations: 1_000,
+        thresholds: Thresholds.perSuite
+    )
     let once = Benchmark.Configuration(
-        metrics: [.wallClock, .mallocCountTotal], scalingFactor: .one, maxDuration: .seconds(1),
-        maxIterations: 1_000, thresholds: Thresholds.perSuite)
+        metrics: [.wallClock, .mallocCountTotal],
+        scalingFactor: .one,
+        maxDuration: .seconds(1),
+        maxIterations: 1_000,
+        thresholds: Thresholds.perSuite
+    )
 
     for (name, text) in [("ASCII", plain), ("CJK", wide)] {
         let (content, map) = screen(text)
@@ -59,10 +68,13 @@ func registerSelectionBenchmarks() {
         }
 
         let selection = ContentSelection(
-            anchor: ContentPosition(block: 1, line: 2, offset: 10), head: ContentPosition(block: 9, line: 1, offset: 40)
+            anchor: ContentPosition(block: 1, line: 2, offset: 10),
+            head: ContentPosition(block: 9, line: 1, offset: 40)
         )
         precondition(
-            !map.highlights(of: selection, in: content).isEmpty, "selection/highlights \(name) highlights nothing")
+            !map.highlights(of: selection, in: content).isEmpty,
+            "selection/highlights \(name) highlights nothing"
+        )
         Benchmark("selection/highlights \(name), 40 rows", configuration: once) { benchmark in
             benchmark.startMeasurement()
             blackHole(map.highlights(of: selection, in: content))
@@ -76,7 +88,11 @@ func registerSelectionBenchmarks() {
             benchmark.startMeasurement()
             for index in 0 ..< perSample {
                 let update = controller.drag(
-                    row: 2 + index % 30, col: 2 + (index * 7) % 76, rows: map, scrollableRows: 0 ..< screenRows)
+                    row: 2 + index % 30,
+                    col: 2 + (index * 7) % 76,
+                    rows: map,
+                    scrollableRows: 0 ..< screenRows
+                )
                 if update.changed { changed &+= 1 }
             }
             benchmark.stopMeasurement()

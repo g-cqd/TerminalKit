@@ -106,7 +106,8 @@ struct SequenceRouterOverflowTests {
     /// A private-mode reply and a key sequence whose parameters run past the 4 KiB control-sequence cap.
     @Test(arguments: [("\u{1B}[?", "c"), ("\u{1B}[", "~")])
     func `A control sequence over the cap types none of its tail, and the key after its final byte arrives`(
-        introducer: String, finalByte: String
+        introducer: String,
+        finalByte: String
     ) {
         var router = SequenceRouter()
         let parameters = String(repeating: "1;", count: 3000)

@@ -186,7 +186,8 @@ struct SelectionHighlightTests {
             spans == [
                 HighlightSpan(row: 0, startCol: 6, endCol: 9), HighlightSpan(row: 1, startCol: 0, endCol: 9),
                 HighlightSpan(row: 3, startCol: 0, endCol: 2)
-            ])
+            ]
+        )
     }
 
     @Test func `wide characters are counted in cells, not graphemes`() {

@@ -16,8 +16,10 @@ let marker = CommandLine.arguments.dropFirst().first ?? "/tmp/tk-stream-probe.tx
 let connection = POSIXTerminalConnection()
 let size = try connection.getSize()
 let session = TerminalSession(
-    connection: connection, modes: TerminalModes(alternateScreen: true, hiddenCursor: true),
-    keyboardProtocol: .unsupported)
+    connection: connection,
+    modes: TerminalModes(alternateScreen: true, hiddenCursor: true),
+    keyboardProtocol: .unsupported
+)
 try session.enter()
 
 let pipeline = MainActor.assumeIsolated {

@@ -16,7 +16,9 @@ struct ContestedWidthTests {
         var back = ScreenBuffer(columns: 20, rows: 2)
         back.write(text, row: 1, col: 0, style: .default)
         return String(
-            decoding: DiffRenderer.render(front: ScreenBuffer(columns: 20, rows: 2), back: back), as: UTF8.self)
+            decoding: DiffRenderer.render(front: ScreenBuffer(columns: 20, rows: 2), back: back),
+            as: UTF8.self
+        )
     }
 
     @Test func `the cell after a contested grapheme is placed with a cursor move`() {

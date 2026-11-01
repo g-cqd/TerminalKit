@@ -103,11 +103,17 @@ struct BeginFrameTests {
         // Only row 3 should be dirty (rows 0-2 match the shifted content)
         for col in 0 ..< 5 {
             #expect(
-                !pipeline.buffer.dirty.isDirty(0 * 5 + col), "Row 0 col \(col) should not be dirty")
+                !pipeline.buffer.dirty.isDirty(0 * 5 + col),
+                "Row 0 col \(col) should not be dirty"
+            )
             #expect(
-                !pipeline.buffer.dirty.isDirty(1 * 5 + col), "Row 1 col \(col) should not be dirty")
+                !pipeline.buffer.dirty.isDirty(1 * 5 + col),
+                "Row 1 col \(col) should not be dirty"
+            )
             #expect(
-                !pipeline.buffer.dirty.isDirty(2 * 5 + col), "Row 2 col \(col) should not be dirty")
+                !pipeline.buffer.dirty.isDirty(2 * 5 + col),
+                "Row 2 col \(col) should not be dirty"
+            )
             #expect(pipeline.buffer.dirty.isDirty(3 * 5 + col), "Row 3 col \(col) should be dirty")
         }
 

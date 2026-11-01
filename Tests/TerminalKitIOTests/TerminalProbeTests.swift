@@ -58,7 +58,9 @@ struct TerminalProbeTests {
 
     @Test func `the cell size comes from the window the terminal reports`() throws {
         let connection = answering(
-            [[], []], size: TerminalSize(columns: 120, rows: 40, pixelWidth: 1080, pixelHeight: 720))
+            [[], []],
+            size: TerminalSize(columns: 120, rows: 40, pixelWidth: 1080, pixelHeight: 720)
+        )
 
         let probed = try TerminalProbe(connection: connection, timeout: .milliseconds(20)).probe()
 

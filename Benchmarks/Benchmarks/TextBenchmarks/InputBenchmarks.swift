@@ -4,11 +4,19 @@ import TerminalKitText
 
 func registerInputBenchmarks() {
     let once = Benchmark.Configuration(
-        metrics: [.wallClock, .mallocCountTotal], scalingFactor: .one, maxDuration: .seconds(1),
-        maxIterations: 1_000, thresholds: Thresholds.perSuite)
+        metrics: [.wallClock, .mallocCountTotal],
+        scalingFactor: .one,
+        maxDuration: .seconds(1),
+        maxIterations: 1_000,
+        thresholds: Thresholds.perSuite
+    )
     let repeated = Benchmark.Configuration(
-        metrics: [.wallClock, .mallocCountTotal], scalingFactor: .kilo, maxDuration: .seconds(1),
-        maxIterations: 1_000, thresholds: Thresholds.perSuite)
+        metrics: [.wallClock, .mallocCountTotal],
+        scalingFactor: .kilo,
+        maxDuration: .seconds(1),
+        maxIterations: 1_000,
+        thresholds: Thresholds.perSuite
+    )
     for (name, text) in [
         ("ASCII 6K", (0 ..< 100).map { _ in String(repeating: "word ", count: 12) }.joined(separator: "\n")),
         ("wide", String(repeating: "日本語 e\u{301} 👨‍👩‍👧 words\n", count: 100))

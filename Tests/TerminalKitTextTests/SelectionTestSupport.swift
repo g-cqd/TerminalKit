@@ -35,7 +35,8 @@ func rowMap(for content: TestContent, width: Int, scroll: Int, rows: Int, indent
             let characters = Array(text)
             if characters.isEmpty {
                 all.append(
-                    RowProvenance(block: block.id, ordinal: ordinal, line: line, firstOffset: 0, col: indent, text: ""))
+                    RowProvenance(block: block.id, ordinal: ordinal, line: line, firstOffset: 0, col: indent, text: "")
+                )
             }
             var start = 0
             while start < characters.count {
@@ -48,8 +49,14 @@ func rowMap(for content: TestContent, width: Int, scroll: Int, rows: Int, indent
                 if end == start { end += 1 }
                 all.append(
                     RowProvenance(
-                        block: block.id, ordinal: ordinal, line: line, firstOffset: start, col: indent,
-                        text: String(characters[start ..< end])))
+                        block: block.id,
+                        ordinal: ordinal,
+                        line: line,
+                        firstOffset: start,
+                        col: indent,
+                        text: String(characters[start ..< end])
+                    )
+                )
                 start = end
             }
         }

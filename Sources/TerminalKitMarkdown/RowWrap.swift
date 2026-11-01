@@ -34,8 +34,13 @@ struct RowWrap {
                 let width = character.isASCII ? 1 : UnicodeWidth.displayWidth(of: character)
                 glyphs.append(
                     Glyph(
-                        piece: Int32(index), start: Int32(offset), end: Int32(offset + count), width: Int16(width),
-                        isSpace: character == " "))
+                        piece: Int32(index),
+                        start: Int32(offset),
+                        end: Int32(offset + count),
+                        width: Int16(width),
+                        isSpace: character == " "
+                    )
+                )
             }
         }
         self.glyphs = glyphs
@@ -53,8 +58,13 @@ struct RowWrap {
         for offset in 0 ..< bytes.count {
             glyphs.append(
                 Glyph(
-                    piece: piece, start: Int32(offset), end: Int32(offset + 1), width: 1,
-                    isSpace: bytes[offset] == 0x20))
+                    piece: piece,
+                    start: Int32(offset),
+                    end: Int32(offset + 1),
+                    width: 1,
+                    isSpace: bytes[offset] == 0x20
+                )
+            )
         }
         return true
     }

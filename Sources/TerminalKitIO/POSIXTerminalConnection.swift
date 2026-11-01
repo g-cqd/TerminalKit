@@ -203,7 +203,8 @@ public final class POSIXTerminalConnection: TerminalConnection, @unchecked Senda
         withUnsafeMutablePointer(to: &raw.c_cc) { pointer in
             let controlCharacters = UnsafeMutableRawPointer(pointer)
                 .assumingMemoryBound(
-                    to: cc_t.self)
+                    to: cc_t.self
+                )
             controlCharacters[Int(VMIN)] = 1
             controlCharacters[Int(VTIME)] = 0
         }

@@ -26,7 +26,8 @@ public struct MarkdownLinks: Sendable {
 
     /// A policy of `targets`, `schemes` and `resolve`.
     public init(
-        targets: Targets = .whenMisleading, schemes: Set<String> = ["http", "https", "mailto"],
+        targets: Targets = .whenMisleading,
+        schemes: Set<String> = ["http", "https", "mailto"],
         resolve: (@Sendable (String) -> String?)? = nil
     ) {
         self.targets = targets

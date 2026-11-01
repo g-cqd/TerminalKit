@@ -83,7 +83,11 @@ func compose(_ state: ScreenState, cost: Cost, into buffer: inout ScreenBuffer) 
     spin(cost.microseconds(for: state.version))
     for row in 0 ..< buffer.rows - 1 {
         buffer.write(
-            "streamed line \(state.lines - row) of a long answer that fills the row", row: row, col: 0, style: .default)
+            "streamed line \(state.lines - row) of a long answer that fills the row",
+            row: row,
+            col: 0,
+            style: .default
+        )
     }
     buffer.write("typed \(state.typed) v\(state.version)", row: buffer.rows - 1, col: 0, style: Style(inverse: true))
 }
@@ -141,9 +145,12 @@ final class Recording: Sendable {
                 lastToShown = Double(shown.at &- inner.lastUpdateAt) / 1e6
             }
             return Report(
-                frames: inner.flushes.count, displayLatencies: display,
-                handlingLatencies: inner.handled.map { Double($0) / 1e6 }, finalShown: final,
-                lastUpdateToShown: lastToShown)
+                frames: inner.flushes.count,
+                displayLatencies: display,
+                handlingLatencies: inner.handled.map { Double($0) / 1e6 },
+                finalShown: final,
+                lastUpdateToShown: lastToShown
+            )
         }
     }
 }

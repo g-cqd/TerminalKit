@@ -27,7 +27,8 @@ struct UnicodeWidthStringTests {
         var strings = tricky
         for _ in 0 ..< 5_000 {
             strings.append(
-                (0 ..< Int(next() % 16)).map { _ in alphabet[Int(next() % UInt64(alphabet.count))] }.joined())
+                (0 ..< Int(next() % 16)).map { _ in alphabet[Int(next() % UInt64(alphabet.count))] }.joined()
+            )
         }
         return strings
     }

@@ -61,7 +61,8 @@ struct WindowedLayoutChangeTests {
         #expect(windowed.lines(fromEnd: 0, rows: 40, layout: layout(revisions, calls: calls)) == Array(all.suffix(40)))
         #expect(
             windowed.lines(fromEnd: all.count - 10, rows: 10, layout: layout(revisions, calls: calls))
-                == Array(all[0 ..< 10]))
+                == Array(all[0 ..< 10])
+        )
         revisions.removeLast(50)
         windowed.update(width: 10, revisions: revisions, keepingFromEnd: 30, layout: layout(revisions, calls: calls))
         all = flat(revisions)

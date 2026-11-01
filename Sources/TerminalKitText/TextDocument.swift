@@ -94,7 +94,9 @@ public final class TextDocument {
             cachedDocumentText = normalizedLines.joined(separator: "\n")
             cachedMaxLineWidth = Self.computeMaxLineWidth(for: normalizedLines)
             cachedSerializedByteCount = Self.computeSerializedByteCount(
-                for: normalizedLines, lineEnding: lineEnding)
+                for: normalizedLines,
+                lineEnding: lineEnding
+            )
         }
     }
 
@@ -149,7 +151,8 @@ public final class TextDocument {
     }
 
     nonisolated public static func computeMaxLineWidth<C: Collection>(
-        for lines: C, tabSize: Int = 4
+        for lines: C,
+        tabSize: Int = 4
     ) -> Int where C.Element == String {
         lines.reduce(0) { max($0, TextDisplayMetrics.displayWidth(of: $1, tabSize: tabSize)) }
     }

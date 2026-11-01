@@ -54,7 +54,8 @@ struct TextWrapRowsTests {
             TextWrap.rows("hello world foo", width: 8) == [
                 TextWrap.Row(text: "hello", line: 0, offset: 0), TextWrap.Row(text: "world", line: 0, offset: 6),
                 TextWrap.Row(text: "foo", line: 0, offset: 12)
-            ])
+            ]
+        )
     }
 
     @Test func `a word too long for a row is cut inside, with no space between the rows`() {
@@ -62,7 +63,8 @@ struct TextWrapRowsTests {
             TextWrap.rows("abcdefghij", width: 4) == [
                 TextWrap.Row(text: "abcd", line: 0, offset: 0), TextWrap.Row(text: "efgh", line: 0, offset: 4),
                 TextWrap.Row(text: "ij", line: 0, offset: 8)
-            ])
+            ]
+        )
     }
 
     @Test func `line feeds end hard lines, and an empty line is still a row`() {
@@ -70,7 +72,8 @@ struct TextWrapRowsTests {
             TextWrap.rows("ab\n\ncd ef", width: 2) == [
                 TextWrap.Row(text: "ab", line: 0, offset: 0), TextWrap.Row(text: "", line: 1, offset: 0),
                 TextWrap.Row(text: "cd", line: 2, offset: 0), TextWrap.Row(text: "ef", line: 2, offset: 3)
-            ])
+            ]
+        )
     }
 
     @Test func `offsets count graphemes, not bytes or scalars, so a wide character or an accent is one`() {

@@ -36,8 +36,11 @@ public struct TerminalModes: Sendable, Equatable {
     /// The modes an interactive screen like ask's needs: alternate screen, hidden cursor, bracketed paste,
     /// and unambiguous Escape where the terminal supports it.
     public static let fullScreen = TerminalModes(
-        alternateScreen: true, hiddenCursor: true, bracketedPaste: true,
-        kittyKeyboardFlags: KittyKeyboardFlags.disambiguate)
+        alternateScreen: true,
+        hiddenCursor: true,
+        bracketedPaste: true,
+        kittyKeyboardFlags: KittyKeyboardFlags.disambiguate
+    )
 }
 
 /// Flags of the kitty keyboard protocol.

@@ -106,7 +106,8 @@ public struct ClipboardWriter: Sendable {
     public init(environment: [String: String]) {
         self.init(
             identity: TerminalIdentity(environment: environment),
-            isRemote: environment["SSH_CONNECTION"] != nil || environment["SSH_TTY"] != nil)
+            isRemote: environment["SSH_CONNECTION"] != nil || environment["SSH_TTY"] != nil
+        )
     }
 
     /// Plans copying `text`.

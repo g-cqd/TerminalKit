@@ -9,8 +9,13 @@ import Testing
 @Suite("Terminal modes are entered and left as a unit")
 struct TerminalSessionTests {
     private let everything = TerminalModes(
-        alternateScreen: true, hiddenCursor: true, bracketedPaste: true, focusEvents: true, mouse: true,
-        kittyKeyboardFlags: KittyKeyboardFlags.disambiguate)
+        alternateScreen: true,
+        hiddenCursor: true,
+        bracketedPaste: true,
+        focusEvents: true,
+        mouse: true,
+        kittyKeyboardFlags: KittyKeyboardFlags.disambiguate
+    )
 
     private func model(after bytes: [UInt8]) -> TerminalStateModel {
         var model = TerminalStateModel()
@@ -114,10 +119,15 @@ struct TerminalSessionTests {
 
     @Test func `Escape is unambiguous only when disambiguation was pushed`() {
         let pushed = TerminalSession(
-            connection: RecordingConnection(), modes: everything, keyboardProtocol: .supported)
+            connection: RecordingConnection(),
+            modes: everything,
+            keyboardProtocol: .supported
+        )
         let legacy = TerminalSession(
-            connection: RecordingConnection(), modes: TerminalModes(alternateScreen: true),
-            keyboardProtocol: .supported)
+            connection: RecordingConnection(),
+            modes: TerminalModes(alternateScreen: true),
+            keyboardProtocol: .supported
+        )
 
         #expect(pushed.escapeIsUnambiguous)
         #expect(!legacy.escapeIsUnambiguous)
