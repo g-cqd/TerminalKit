@@ -7,10 +7,13 @@ extension BlockWriter {
     /// does not reflow. An HTML block is its lines, as written, with no gutter.
     mutating func emitCode(_ code: CodeBlock) {
         let base = code.isHTML ? theme.text.applying(theme.html) : theme.text.applying(theme.codeBlock)
-        let gutter = code.isHTML ? [] : [StyledRun(theme.codeGutter, style: theme.codeBlock)]
+        let open = code.isHTML ? nil : theme.codeOpen
+        // Inside a rule (`codeOpen`), the language is on the opening corner, outside the gutter; otherwise it is the gutter's first row.
+        if let open { emitWrapped(opening(open, language: code.language), breaksAnywhere: true) }
+        let gutter =
+            code.isHTML ? [] : [StyledRun(theme.codeGutter, style: open == nil ? theme.codeBlock : theme.codeRule)]
         frames.append(Frame(first: gutter, rest: gutter))
-        defer { frames.removeLast() }
-        if let language = code.language, !code.isHTML {
+        if open == nil, let language = code.language, !code.isHTML {
             emitWrapped(
                 [Piece(text: language, style: theme.codeLabel, source: nil, isVerbatim: false)],
                 breaksAnywhere: true
@@ -24,6 +27,25 @@ extension BlockWriter {
         for (index, line) in code.lines.enumerated() {
             emitWrapped(pieces(of: line, highlights: highlights?[index] ?? [], base: base), breaksAnywhere: true)
         }
+        frames.removeLast()
+        if open != nil, let close = theme.codeClose {
+            emitWrapped(
+                [Piece(text: close, style: theme.codeRule, source: nil, isVerbatim: false)],
+                breaksAnywhere: true
+            )
+        }
+    }
+
+    /// The opening corner's row: the corner, then the language when there is one; the corner alone without its trailing space.
+    private func opening(_ open: String, language: String?) -> [Piece] {
+        guard let language else {
+            let bare = String(open.reversed().drop { $0 == " " }.reversed())
+            return [Piece(text: bare, style: theme.codeRule, source: nil, isVerbatim: false)]
+        }
+        return [
+            Piece(text: open, style: theme.codeRule, source: nil, isVerbatim: false),
+            Piece(text: language, style: theme.codeLabel, source: nil, isVerbatim: false)
+        ]
     }
 
     /// A code line as pieces: cut where a highlight starts or ends and around each tab, which becomes the spaces to the next multiple of four

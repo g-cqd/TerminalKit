@@ -20,6 +20,12 @@ public struct MarkdownTheme: Sendable, Equatable {
     public var codeBlock: Style
     public var codeLabel: Style
     public var codeGutter: String
+    /// A code block inside a rule, when set: `codeOpen` starts the language's row (`╭─ `), `codeClose` is a row after the code (`╰─`),
+    /// and the gutter takes `codeRule`'s style. Chrome: none of it carries source, so a selection copies the code alone. Nil keeps the
+    /// block as the gutter alone draws it.
+    public var codeOpen: String?
+    public var codeClose: String?
+    public var codeRule: Style
     /// Overlay for a link's text, and the style of a target shown after it.
     public var link: Style
     public var linkTarget: Style
@@ -70,6 +76,9 @@ public struct MarkdownTheme: Sendable, Equatable {
         self.codeBlock = codeBlock
         self.codeLabel = codeLabel
         codeGutter = "  "
+        codeOpen = nil
+        codeClose = nil
+        codeRule = .default
         self.link = link
         self.linkTarget = linkTarget
         self.html = html
