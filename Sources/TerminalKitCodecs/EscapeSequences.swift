@@ -63,6 +63,9 @@ public enum EscapeSequences: Sendable {
         0x1b, 0x5b, 0x3f, 0x31, 0x30, 0x30, 0x30, 0x6c  // CSI ? 1000 l
     ]
 
+    /// Motion reports with no button held (1003), on top of ``enableMouseSGR``.
+    public static let enableMouseMotion: [UInt8] = [0x1b, 0x5b, 0x3f, 0x31, 0x30, 0x30, 0x33, 0x68]  // CSI ? 1003 h
+
     /// Enable SGR pixel mouse mode (1016).
     public static let enableMousePixel: [UInt8] = [
         0x1b, 0x5b, 0x3f, 0x31, 0x30, 0x30, 0x30, 0x68,  // CSI ? 1000 h

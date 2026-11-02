@@ -13,6 +13,9 @@ public struct TerminalModes: Sendable, Equatable {
     public var focusEvents: Bool
     /// Mouse reports for clicks and drags, SGR-encoded (`?1000`, `?1002`, `?1006`).
     public var mouse: Bool
+    /// Motion reports with no button held (`?1003`), for hover; only with ``mouse``. A terminal then reports every cell the pointer
+    /// crosses, so a program asks for it only when it shows something on hover.
+    public var mouseMotion: Bool
     /// Kitty keyboard protocol flags to push (`CSI > flags u`), or zero for none. Pushed only when the
     /// terminal answered the keyboard probe (ADR-0014); see ``KittyKeyboardFlags``.
     public var kittyKeyboardFlags: UInt8
@@ -23,6 +26,7 @@ public struct TerminalModes: Sendable, Equatable {
         bracketedPaste: Bool = false,
         focusEvents: Bool = false,
         mouse: Bool = false,
+        mouseMotion: Bool = false,
         kittyKeyboardFlags: UInt8 = 0
     ) {
         self.alternateScreen = alternateScreen
@@ -30,6 +34,7 @@ public struct TerminalModes: Sendable, Equatable {
         self.bracketedPaste = bracketedPaste
         self.focusEvents = focusEvents
         self.mouse = mouse
+        self.mouseMotion = mouseMotion
         self.kittyKeyboardFlags = kittyKeyboardFlags
     }
 

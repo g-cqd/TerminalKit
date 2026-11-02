@@ -169,6 +169,7 @@ public final class TerminalSession: Sendable {
         if requested.bracketedPaste { bytes.append(contentsOf: EscapeSequences.enableBracketedPaste) }
         if requested.focusEvents { bytes.append(contentsOf: EscapeSequences.enableFocusEvents) }
         if requested.mouse { bytes.append(contentsOf: EscapeSequences.enableMouseSGR) }
+        if requested.mouse, requested.mouseMotion { bytes.append(contentsOf: EscapeSequences.enableMouseMotion) }
         switch keyboardProtocol {
             case .supported:
                 bytes.append(contentsOf: EscapeSequences.pushKeyboardMode(flags: requested.kittyKeyboardFlags))
@@ -184,6 +185,7 @@ public final class TerminalSession: Sendable {
     func leaveBytes(keyboardPushed: Bool) -> ContiguousArray<UInt8> {
         var bytes = ContiguousArray<UInt8>(EscapeSequences.endSyncUpdate)
         if keyboardPushed { bytes.append(contentsOf: EscapeSequences.popKeyboardMode) }
+        // Motion (?1003) needs no line of its own: the reset ladder's selective cleanup below clears every mouse mode.
         if requested.mouse { bytes.append(contentsOf: EscapeSequences.disableMouseSGR) }
         if requested.focusEvents { bytes.append(contentsOf: EscapeSequences.disableFocusEvents) }
         if requested.bracketedPaste { bytes.append(contentsOf: EscapeSequences.disableBracketedPaste) }
