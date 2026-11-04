@@ -28,7 +28,11 @@ let package = Package(
         .package(name: "TerminalKit", path: ".."),
         // Exact, like every other pin in the ecosystem: a benchmark harness that moves under the numbers
         // changes the numbers.
-        .package(url: "https://github.com/ordo-one/benchmark", exact: "1.38.0")
+        .package(url: "https://github.com/ordo-one/benchmark", exact: "1.38.0"),
+        // For the probe that reads the thread's instructions and counts allocations: the revision TerminalKit itself pins.
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "4879ca7522a6277e9425c69309a801de43b57771"),
+        // The parser the probe reads documents with: the revision TerminalKit itself pins.
+        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "9000ebeccef2a1ad1edc15c6c143a0662f8df7de")
     ],
     targets: [
         // The thresholds every suite shares.
@@ -105,6 +109,19 @@ let package = Package(
                 .product(name: "TerminalKitStyle", package: "TerminalKit")
             ],
             path: "Probes/WidthProbe",
+            swiftSettings: strictSettings
+        ),
+        // Not a benchmark: the cost of a Markdown document laid out as rows, by size of document, in CPU time, instructions and allocations (roadmap 0206).
+        .executableTarget(
+            name: "MarkdownRowsProbe",
+            dependencies: [
+                .product(name: "TerminalKitMarkdown", package: "TerminalKit"),
+                .product(name: "TerminalKitStyle", package: "TerminalKit"),
+                .product(name: "AemiMarkdown", package: "AemiMarkdown"),
+                .product(name: "AemiMetrics", package: "aemi"),
+                .product(name: "CAemiTestKitMalloc", package: "aemi")
+            ],
+            path: "Probes/MarkdownRowsProbe",
             swiftSettings: strictSettings
         ),
         // Not a benchmark: who should own the render pipeline, under load (roadmap 0014).
