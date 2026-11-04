@@ -16,7 +16,8 @@ public import AemiMarkdown
 /// ```
 public struct MarkdownRenderer: Sendable {
     /// The styles and glyphs rows are drawn in.
-    public var theme: MarkdownTheme
+    public var theme: MarkdownTheme { didSet { themeBox = ThemeBox(theme) } }
+    private var themeBox: ThemeBox
     /// What links become.
     public var links: MarkdownLinks
     /// Colours fenced code by its language, or nil to draw code in the theme's code style.
@@ -34,6 +35,7 @@ public struct MarkdownRenderer: Sendable {
         softBreaks: SoftBreaks = .space
     ) {
         self.theme = theme
+        themeBox = ThemeBox(theme)
         self.links = links
         self.highlighter = highlighter
         self.softBreaks = softBreaks
@@ -58,7 +60,7 @@ public struct MarkdownRenderer: Sendable {
             events = document.events(of: block)
         }
         var writer = BlockWriter(
-            theme: theme,
+            theme: themeBox,
             links: links,
             highlighter: highlighter,
             softBreaks: softBreaks,

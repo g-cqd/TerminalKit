@@ -8,13 +8,14 @@ struct InlineCollector {
     /// The links open around the current inline: their target, and the first piece of their text.
     private var links: [(target: String, source: Range<Int>?, firstPiece: Int)] = []
     private var codeDepth = 0
-    private let theme: MarkdownTheme
+    private let themeBox: ThemeBox
+    private var theme: MarkdownTheme { _read { yield themeBox.theme } }
     private let policy: MarkdownLinks
     private let softBreaks: SoftBreaks
 
-    init(base: Style, theme: MarkdownTheme, links: MarkdownLinks, softBreaks: SoftBreaks) {
+    init(base: Style, theme: ThemeBox, links: MarkdownLinks, softBreaks: SoftBreaks) {
         styles = [base]
-        self.theme = theme
+        themeBox = theme
         policy = links
         self.softBreaks = softBreaks
     }

@@ -19,7 +19,8 @@ struct BlockWriter {
         var depth: Int
     }
 
-    let theme: MarkdownTheme
+    private let themeBox: ThemeBox
+    var theme: MarkdownTheme { _read { yield themeBox.theme } }
     let links: MarkdownLinks
     let highlighter: (any MarkdownCodeHighlighter)?
     let softBreaks: SoftBreaks
@@ -38,14 +39,14 @@ struct BlockWriter {
     private var table: TableBuilder?
 
     init(
-        theme: MarkdownTheme,
+        theme: ThemeBox,
         links: MarkdownLinks,
         highlighter: (any MarkdownCodeHighlighter)?,
         softBreaks: SoftBreaks,
         width: Int,
         document: MarkdownDocument
     ) {
-        self.theme = theme
+        themeBox = theme
         self.links = links
         self.highlighter = highlighter
         self.softBreaks = softBreaks
@@ -232,6 +233,11 @@ struct BlockWriter {
     /// The prefix keeps its innermost columns, as many as the budget and the content leave: a grapheme wider than the content width (a wide
     /// character in one column) takes the prefix's place, so a row is wider than the width only when that grapheme is.
     mutating func emit(_ content: [StyledRun]) {
+        // Outside every container there is no prefix to build, fit or cut.
+        if frames.isEmpty {
+            lines.append(StyledLine(content))
+            return
+        }
         var prefix: [StyledRun] = []
         for index in frames.indices {
             prefix += frames[index].isFirstUsed ? frames[index].rest : frames[index].first
@@ -245,6 +251,10 @@ struct BlockWriter {
 
     /// Adds a blank row: the bars of the open quotes, and no trailing space.
     mutating func emitBlank() {
+        if frames.isEmpty {
+            lines.append(StyledLine())
+            return
+        }
         var prefix = RowWrap.keepingLast(prefixBudget, of: frames.flatMap(\.rest))
         while let last = prefix.last {
             let trimmed = String(last.text.reversed().drop { $0 == " " }.reversed())
@@ -263,7 +273,7 @@ struct BlockWriter {
     }
 
     private func collector(_ base: Style) -> InlineCollector {
-        InlineCollector(base: base, theme: theme, links: links, softBreaks: softBreaks)
+        InlineCollector(base: base, theme: themeBox, links: links, softBreaks: softBreaks)
     }
 
     static func spaces(_ count: Int) -> StyledRun { StyledRun(String(repeating: " ", count: count), style: .default) }
