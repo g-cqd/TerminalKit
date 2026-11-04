@@ -1,0 +1,14 @@
+{
+  "project": { "linux": false },
+  "swift": { "versions": ["6.4.1"] },
+  "checks": { "macos-release": ["push", "pull-request", "merge-queue", "tag", "dispatch", "nightly"] },
+  "quality": { "discipline": {} },
+  "commands": [
+    {
+      "id": "signal-safety",
+      "title": "Verification · Signal Safety",
+      "run": "sh Scripts/verify-signal-safety.sh",
+      "after": "macos-debug"
+    }
+  ]
+}

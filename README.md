@@ -31,14 +31,17 @@ Requires Swift 6.4 and macOS 26. Kernel utilities come from Aemi at the revision
 ## Verify
 
 ```sh
-Scripts/quality.sh --check
+.ci/swift-ci local               # what CI checks: format, SwiftLint, analyzers, discipline, debug tests
+.ci/swift-ci run macos-release   # the optimized tests CI runs on every change
+Scripts/quality.sh               # format in place, then lint and run the optimized tests
 # Or build/run optimized tests directly:
 swift test -c release --enable-testable-imports
 # Re-run that build without recompilation:
 swift test -c release --skip-build
 ```
 
-The gate runs format checks, SwiftLint metrics and optimized tests. Select testability explicitly
+CI (`.github/workflows/ci.yml`, configured by `.ci/action.json`) runs those checks, the signal-safety probe and,
+for a push or pull request, the benchmark comparison against its base. Select testability explicitly
 for internal tests (SE-0455); `swift build --build-tests -c release` is not equivalent.
 See [ADR-0012](docs/adr/0012-explicit-release-testability.md) for the controlled reproduction.
 

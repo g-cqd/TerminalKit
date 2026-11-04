@@ -57,7 +57,9 @@ public enum TextWrap {
             String(unsafeUninitializedCapacity: range.count) { buffer in
                 // SAFETY: `range` lies within `bytes` (offsets this walk produced) and `buffer` holds `range.count`.
                 bytes.withUnsafeBufferPointer { source in
-                    unsafe buffer.baseAddress?.update(from: source.baseAddress! + range.lowerBound, count: range.count)
+                    // An empty buffer has no base address, and then nothing to copy.
+                    guard let destination = buffer.baseAddress, let base = source.baseAddress else { return }
+                    unsafe destination.update(from: base + range.lowerBound, count: range.count)
                 }
                 return range.count
             }
