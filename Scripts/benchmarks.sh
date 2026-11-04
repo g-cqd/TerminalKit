@@ -2,12 +2,17 @@
 # Time benchmarks (roadmap 0006, ADR-0017). Release builds only, through package-benchmark.
 #
 #   Scripts/benchmarks.sh                  run every suite and print the results
-#   Scripts/benchmarks.sh compare <rev>    run this tree and <rev> on this machine, fail on a regression
+#   Scripts/benchmarks.sh compare <rev> [--head-first]
+#                                          run <rev> then this tree on this machine (or this tree first), fail on
+#                                          a regression
 #   Scripts/benchmarks.sh record           rewrite Benchmarks/REFERENCE.md from a run on this machine
 #
 # `compare` measures <rev>'s library with THIS tree's benchmarks, in a temporary worktree, so the two
 # runs time the same workloads and only the code under test differs. Nothing in the working tree is
-# checked out or overwritten.
+# checked out or overwritten. Load that changes during a run (a hosted VM throttling, a neighbour starting or
+# ending) favours whichever of the two runs met less of it: the same tree against itself measured head first came
+# out up to 95 % slower while the load average fell from 35 to 13. `--head-first` swaps the order, so a second
+# comparison in the other order tells a regression, which shows either way, from drift, which flips.
 #
 # Exit codes: 0 no regression, 1 a regression or a failure, 2 usage.
 set -eu
@@ -36,7 +41,10 @@ case "${1:-}" in
         printf 'Wrote %s\n' "$bench/REFERENCE.md"
         ;;
     compare)
-        [ $# -eq 2 ] || { echo "usage: $0 compare <rev>" >&2; exit 2; }
+        [ $# -eq 2 ] || { [ $# -eq 3 ] && [ "$3" = --head-first ]; } || {
+            echo "usage: $0 compare <rev> [--head-first]" >&2
+            exit 2
+        }
         base=$(git -C "$root" rev-parse --verify "$2^{commit}")
         scratch=$(mktemp -d)
         cleanup() { git -C "$root" worktree remove --force "$scratch/base" >/dev/null 2>&1; rm -rf "$scratch"; }
@@ -52,20 +60,31 @@ case "${1:-}" in
         rm -rf "$scratch/base/Benchmarks"
         rsync -a --exclude .build --exclude .benchmarkBaselines "$bench/" "$scratch/base/Benchmarks/"
 
-        printf '==> benchmarks at %s\n' "$base"
-        if ! (cd "$scratch/base/Benchmarks" \
-            && swift package --allow-writing-to-package-directory benchmark baseline update base --no-progress --quiet); then
-            # This tree's benchmarks use an API the base lacks (a change that adds one, with its benchmark).
-            # Fall back to the base's own benchmarks: the suites both trees have are still compared.
-            printf '==> this tree'"'"'s benchmarks do not build at %s; using its own\n' "$base"
-            rm -rf "$scratch/base/Benchmarks"
-            git -C "$scratch/base" checkout -q -- Benchmarks 2>/dev/null || { echo "[FAIL] no benchmarks at $base" >&2; exit 1; }
-            (cd "$scratch/base/Benchmarks" \
-                && swift package --allow-writing-to-package-directory benchmark baseline update base --no-progress --quiet)
+        measure_base() {
+            printf '==> benchmarks at %s\n' "$base"
+            if ! (cd "$scratch/base/Benchmarks" \
+                && swift package --allow-writing-to-package-directory benchmark baseline update base --no-progress --quiet); then
+                # This tree's benchmarks use an API the base lacks (a change that adds one, with its benchmark).
+                # Fall back to the base's own benchmarks: the suites both trees have are still compared.
+                printf '==> this tree'"'"'s benchmarks do not build at %s; using its own\n' "$base"
+                rm -rf "$scratch/base/Benchmarks"
+                git -C "$scratch/base" checkout -q -- Benchmarks 2>/dev/null || { echo "[FAIL] no benchmarks at $base" >&2; exit 1; }
+                (cd "$scratch/base/Benchmarks" \
+                    && swift package --allow-writing-to-package-directory benchmark baseline update base --no-progress --quiet)
+            fi
+        }
+        measure_head() {
+            printf '==> benchmarks of this tree\n'
+            (cd "$bench" \
+                && swift package --allow-writing-to-package-directory benchmark baseline update head --no-progress --quiet)
+        }
+        if [ "${3:-}" = --head-first ]; then
+            measure_head
+            measure_base
+        else
+            measure_base
+            measure_head
         fi
-        printf '==> benchmarks of this tree\n'
-        (cd "$bench" \
-            && swift package --allow-writing-to-package-directory benchmark baseline update head --no-progress --quiet)
         for target in "$scratch"/base/Benchmarks/.benchmarkBaselines/*/; do
             name=$(basename "$target")
             mkdir -p "$bench/.benchmarkBaselines/$name"

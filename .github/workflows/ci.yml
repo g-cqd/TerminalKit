@@ -67,14 +67,16 @@ jobs:
         # A regression has to reproduce. The 25th-percentile gate reads a sub-microsecond benchmark in 41.67 ns clock
         # ticks, so 417 ns against 500 ns is ten ticks against twelve: +19 % against a 15 % threshold, from one tick of
         # noise, on a pull request that changed no source. Two comparisons that both exceed the thresholds are a
-        # regression; one is noise.
+        # regression; one is noise. The second measures in the other order: load that drifts during a run favours
+        # one side, so the same order twice can "reproduce" a regression with no code changed (2026-11-04: a commit
+        # that only moved pins to CI-only revisions failed both base-first attempts).
         env:
           BASE: ${{ steps.base.outputs.sha }}
         run: |
-          for attempt in 1 2; do
-            if Scripts/benchmarks.sh compare "$BASE"; then exit 0; fi
-            echo "::warning::attempt $attempt exceeded the thresholds; a regression must reproduce"
-          done
+          if Scripts/benchmarks.sh compare "$BASE"; then exit 0; fi
+          echo "::warning::attempt 1 (base first) exceeded the thresholds; a regression must reproduce"
+          if Scripts/benchmarks.sh compare "$BASE" --head-first; then exit 0; fi
+          echo "::warning::attempt 2 (head first) exceeded the thresholds too"
           exit 1
       - name: Cache · Save Benchmark Build
         if: ${{ always() && github.ref == 'refs/heads/main' && steps.bench-cache.outputs.cache-hit != 'true' }}
