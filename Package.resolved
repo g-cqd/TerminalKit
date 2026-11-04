@@ -1,5 +1,5 @@
 {
-  "originHash" : "39b04417703b29afdd248245799b4b7150c8445c9649e52577744c469b4c1b71",
+  "originHash" : "19dc105c8948f63148755eb5725b23f87608833d2f5bf1e8f0a832d9a29d7966",
   "pins" : [
     {
       "identity" : "aemi",
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiMarkdown.git",
       "state" : {
-        "revision" : "d481bb6659e4280623e090c6c417a16c5362b60f"
+        "revision" : "9000ebeccef2a1ad1edc15c6c143a0662f8df7de"
       }
     },
     {
