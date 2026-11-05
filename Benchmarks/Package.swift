@@ -32,7 +32,7 @@ let package = Package(
         // For the probe that reads the thread's instructions and counts allocations: the revision TerminalKit itself pins.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "4879ca7522a6277e9425c69309a801de43b57771"),
         // The parser the probe reads documents with: the revision TerminalKit itself pins.
-        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "9000ebeccef2a1ad1edc15c6c143a0662f8df7de")
+        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "4f886b8b5f182e3ecfab101aa6a293d32f076f6a")
     ],
     targets: [
         // The thresholds every suite shares.
