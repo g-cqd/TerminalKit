@@ -159,6 +159,7 @@ struct BlockWriter {
     }
 
     private mutating func leaf(_ node: MarkdownNode) {
+        if node.kind == .taskMarker, takesBulletPlace(node) { return }
         if inline != nil {
             let (parent, document) = (stack.last, document)
             inline?.leaf(node, parent: parent, in: document)
@@ -195,6 +196,18 @@ struct BlockWriter {
             case .virtualSpaces: code?.pendingSpaces = node.value
             default: break
         }
+    }
+
+    /// A task item of a bulleted list: the checkbox goes where the bullet is, and the text starts in the column every item's text starts in. Not for an ordered list, whose number stays.
+    private mutating func takesBulletPlace(_ node: MarkdownNode) -> Bool {
+        guard let glyphs = theme.taskGlyphs, let list = lists.last, !list.ordered, let last = frames.indices.last,
+            !frames[last].isFirstUsed
+        else {
+            return false
+        }
+        let marker = StyledRun((node.payload == 1 ? glyphs.done : glyphs.open) + " ", style: theme.marker)
+        frames[last] = Frame(first: [marker], rest: [Self.spaces(StyledLine([marker]).width)])
+        return true
     }
 
     // MARK: - Spacing and prefixes

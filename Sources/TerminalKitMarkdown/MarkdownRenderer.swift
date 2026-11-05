@@ -72,6 +72,26 @@ public struct MarkdownRenderer: Sendable {
         return writer.lines.isEmpty ? [StyledLine()] : writer.lines
     }
 
+    /// Whether `block` is the first definition of a run of footnotes: the block before it is not one.
+    ///
+    /// The rule above the notes (``footnoteRule(width:)``) belongs to the run and not to a block: the rows of a block are cached by its content, and what a block's neighbour is is not
+    /// in it. A caller that draws block by block puts the rule above a block this says starts a run; ``lines(of:width:)`` does it for a whole document.
+    public func startsFootnotes(_ block: MarkdownBlock, in document: MarkdownDocument) -> Bool {
+        guard block.node.kind == .footnoteDefinition else { return false }
+        guard block.ordinal > 0, let before = document.block(at: block.ordinal - 1) else { return true }
+        return before.node.kind != .footnoteDefinition
+    }
+
+    /// The row that separates the footnotes from the text above them, or nil when the theme draws none.
+    public func footnoteRule(width: Int) -> StyledLine? {
+        guard let columns = theme.footnoteRule, columns > 0 else { return nil }
+        let run = StyledRun(
+            String(repeating: theme.ruleGlyph, count: Swift.min(columns, Swift.max(1, width))),
+            style: theme.rule
+        )
+        return StyledLine([run])
+    }
+
     /// The rows of every block of `document`, a blank row between top-level blocks.
     ///
     /// - Parameters:
@@ -82,6 +102,7 @@ public struct MarkdownRenderer: Sendable {
         var lines: [StyledLine] = []
         for block in document.topLevelBlocks {
             if !lines.isEmpty { lines.append(StyledLine()) }
+            if startsFootnotes(block, in: document), let rule = footnoteRule(width: width) { lines.append(rule) }
             lines += self.lines(of: block, in: document, width: width)
         }
         return lines

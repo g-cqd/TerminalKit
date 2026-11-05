@@ -5,6 +5,17 @@ public import TerminalKitStyle
 /// The styles named as overlays apply over the text they are in: an overlay sets what it names, a colour other than `.default` and each
 /// attribute that is on, and leaves the rest. Colours are palette indices, so the terminal's own theme applies. Every glyph is one column in
 /// each terminal measured (roadmap 0013), so a row's width is known.
+/// The glyphs of a task item's checkbox, one column each.
+public struct TaskGlyphs: Sendable, Equatable {
+    public var done: String
+    public var open: String
+
+    public init(done: String, open: String) {
+        self.done = done
+        self.open = open
+    }
+}
+
 public struct MarkdownTheme: Sendable, Equatable {
     /// Paragraphs, list items, cells.
     public var text: Style
@@ -41,6 +52,11 @@ public struct MarkdownTheme: Sendable, Equatable {
     public var ruleGlyph: Character
     /// Bullets by list depth, outermost first, repeating.
     public var bullets: [String]
+    /// A task item's checkbox, one column each, put where the bullet of a bulleted list is, so the text of every item starts in the same column. Nil keeps `[x] ` and `[ ] ` before
+    /// the text, after the bullet.
+    public var taskGlyphs: TaskGlyphs?
+    /// The columns of the rule above a run of footnote definitions (at most the width), drawn with the rule's glyph and style. Nil draws none.
+    public var footnoteRule: Int?
     /// A table's column separator, the rule under its header and where the two cross, and an overlay for header cells.
     public var tableBorder: Style
     public var tableColumnSeparator: String
@@ -88,6 +104,8 @@ public struct MarkdownTheme: Sendable, Equatable {
         self.rule = rule
         ruleGlyph = "─"
         bullets = ["•", "◦", "▪"]
+        taskGlyphs = nil
+        footnoteRule = nil
         self.tableBorder = tableBorder
         tableColumnSeparator = " │ "
         tableRuleGlyph = "─"
@@ -112,9 +130,19 @@ public struct MarkdownTheme: Sendable, Equatable {
         rule: Style(dim: true),
         tableBorder: Style(dim: true)
     )
+    .with { theme in
+        theme.taskGlyphs = TaskGlyphs(done: "☑", open: "☐")
+        theme.footnoteRule = 8
+    }
 
     /// No colour: bold headings, strong and header cells, italic emphasis, struck strikethrough, and everything else in the default style.
     public static let plain = MarkdownTheme()
+
+    private func with(_ change: (inout MarkdownTheme) -> Void) -> MarkdownTheme {
+        var copy = self
+        change(&copy)
+        return copy
+    }
 
     /// The style of a heading of `level`.
     func heading(_ level: Int) -> Style { headings[Swift.min(Swift.max(level, 1), headings.count) - 1] }
