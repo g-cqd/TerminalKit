@@ -123,24 +123,47 @@ public final class RenderLoop<Composer: FrameComposer>: Sendable {
                 return pending
             }
             if work.halting { return }
-            var full = work.redraw
-            if let size = work.size {
-                pipeline.resize(columns: size.columns, rows: size.rows)
-                full = true
+            // Each frame is its own autorelease pool: this thread lives as long as the screen, so what Foundation autoreleases in a
+            // frame (a path string, say) would otherwise stay until it ends (ask's note n29: 130 MB after thirty hours).
+            let drawn = Self.drainingAutoreleased {
+                frame(work, pipeline: pipeline, composer: &composer, lastState: &lastState)
             }
-            if let state = work.state ?? (full ? lastState : nil) {
-                lastState = state
-                pipeline.beginFrame()
-                composer.compose(state, into: pipeline)
-                do {
-                    if full { try pipeline.forceRedraw() } else { try pipeline.flush() }
-                } catch {
-                    failureState.withLock { $0 = error }
-                    return
-                }
-            }
-            if work.finishing { return }
+            if !drawn || work.finishing { return }
         }
+    }
+
+    /// Draws what `work` asks for. Returns false when the connection failed, which ends the loop.
+    private func frame(
+        _ work: Pending,
+        pipeline: RenderPipeline,
+        composer: inout Composer,
+        lastState: inout Composer.State?
+    ) -> Bool {
+        var full = work.redraw
+        if let size = work.size {
+            pipeline.resize(columns: size.columns, rows: size.rows)
+            full = true
+        }
+        guard let state = work.state ?? (full ? lastState : nil) else { return true }
+        lastState = state
+        pipeline.beginFrame()
+        composer.compose(state, into: pipeline)
+        do {
+            if full { try pipeline.forceRedraw() } else { try pipeline.flush() }
+        } catch {
+            failureState.withLock { $0 = error }
+            return false
+        }
+        return true
+    }
+
+    /// `body`, in an autorelease pool of its own where there are autorelease pools (Apple's platforms).
+    static func drainingAutoreleased<Result>(_ body: () -> Result) -> Result {
+        #if canImport(ObjectiveC)
+            autoreleasepool(invoking: body)
+        #else
+            body()
+        #endif
     }
 }
 

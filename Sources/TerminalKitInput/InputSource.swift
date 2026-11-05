@@ -66,6 +66,9 @@ public final class InputSource: Sendable {
                 completion.finish()
             }
             thread.name = "TerminalKit.input"
+            // A key or the wheel waits on this thread before anything else: under a loaded machine it is scheduled first, as the render
+            // thread is (ask's note n18).
+            thread.qualityOfService = .userInteractive
             thread.stackSize = 256 * 1024
             wakers.withLock { $0.append(waker) }
             thread.start()
