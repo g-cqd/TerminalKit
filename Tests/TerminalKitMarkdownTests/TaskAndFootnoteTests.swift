@@ -10,18 +10,16 @@ struct TaskAndFootnoteTests {
         Rendered.rows(markdown, width: width, theme: theme)
     }
 
-    @Test func `a task takes the place of the bullet, so the text is on the guide of the other items`() {
+    @Test func `a task takes the place of the bullet with a checkbox drawn in strokes, the same width done or not`() {
         let out = rows("- plain\n- [x] done\n- [ ] open\n  - [ ] nested\n  - nested plain")
-        #expect(out == ["• plain", "☑ done", "☐ open", "  ☐ nested", "  ◦ nested plain"])
-        let columns = out.prefix(3).map { $0.unicodeScalars.dropFirst(2).first }
-        #expect(columns.count == 3)
+        #expect(out == ["• plain", "[✓] done", "[ ] open", "    [ ] nested", "    ◦ nested plain"])
     }
 
     @Test func `a wrapped task item hangs under its text`() {
         let out = rows("- [x] one two three four five six seven eight", width: 20)
         #expect(
-            out.first?.hasPrefix("☑ one") == true
-                && out.dropFirst().allSatisfy { $0.hasPrefix("  ") && !$0.hasPrefix("   ") }
+            out.first?.hasPrefix("[✓] one") == true
+                && out.dropFirst().allSatisfy { $0.hasPrefix("    ") && !$0.hasPrefix("     ") }
         )
     }
 

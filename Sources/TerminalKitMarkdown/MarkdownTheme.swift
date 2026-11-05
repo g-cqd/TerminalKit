@@ -5,7 +5,7 @@ public import TerminalKitStyle
 /// The styles named as overlays apply over the text they are in: an overlay sets what it names, a colour other than `.default` and each
 /// attribute that is on, and leaves the rest. Colours are palette indices, so the terminal's own theme applies. Every glyph is one column in
 /// each terminal measured (roadmap 0013), so a row's width is known.
-/// The glyphs of a task item's checkbox, one column each.
+/// The checkbox of a task item, drawn in strokes as ask draws its own (`[✓]`, `[ ]`): the two are the same width, so the text of every task item starts in one column.
 public struct TaskGlyphs: Sendable, Equatable {
     public var done: String
     public var open: String
@@ -131,7 +131,7 @@ public struct MarkdownTheme: Sendable, Equatable {
         tableBorder: Style(dim: true)
     )
     .with { theme in
-        theme.taskGlyphs = TaskGlyphs(done: "☑", open: "☐")
+        theme.taskGlyphs = TaskGlyphs(done: "[✓]", open: "[ ]")
         theme.footnoteRule = 8
     }
 
