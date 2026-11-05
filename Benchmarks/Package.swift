@@ -30,9 +30,9 @@ let package = Package(
         // changes the numbers.
         .package(url: "https://github.com/ordo-one/benchmark", exact: "1.38.0"),
         // For the probe that reads the thread's instructions and counts allocations: the revision TerminalKit itself pins.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "4879ca7522a6277e9425c69309a801de43b57771"),
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "2b2dbe6d0bc3dcb5ec48093c02a2e279d03a37a8"),
         // The parser the probe reads documents with: the revision TerminalKit itself pins.
-        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "4f886b8b5f182e3ecfab101aa6a293d32f076f6a")
+        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "e35a5017076712b765acb31b859f33c2922c2de1")
     ],
     targets: [
         // The thresholds every suite shares.
