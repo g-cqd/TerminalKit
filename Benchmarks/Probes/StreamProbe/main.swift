@@ -22,9 +22,8 @@ let session = TerminalSession(
 )
 try session.enter()
 
-let pipeline = MainActor.assumeIsolated {
-    RenderPipeline(connection: connection, columns: size.columns, rows: size.rows)
-}
+// Off the main actor since 111ff66: built where it is used, not returned out of an isolation it no longer needs.
+let pipeline = RenderPipeline(connection: connection, columns: size.columns, rows: size.rows)
 let transcriptRows = size.rows - 1
 
 func line(_ number: Int) -> String {
