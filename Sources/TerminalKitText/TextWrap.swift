@@ -20,8 +20,20 @@ public enum TextWrap {
     /// The lines of `text` no wider than `width`. Line feeds end lines; tabs become four spaces.
     public static func lines(_ text: String, width: Int) -> [String] {
         var lines: [String] = []
-        walk(text, width: width) { row, _, _ in lines.append(row) }
+        walk(text, width: width, build: true) { row, _, _, _ in lines.append(row) }
         return lines
+    }
+
+    /// How many rows ``lines(_:width:)`` would return and the display width of the widest, without building any of them: the same walk, so they
+    /// cannot disagree, and no allocation for the rows (for layout, which only needs the size).
+    public static func measure(_ text: String, width: Int) -> (rows: Int, widest: Int) {
+        var rows = 0
+        var widest = 0
+        walk(text, width: width, build: false) { _, rowWidth, _, _ in
+            rows &+= 1
+            widest = Swift.max(widest, rowWidth)
+        }
+        return (rows, widest)
     }
 
     /// The same rows as ``lines(_:width:)``, each with its hard line and grapheme offset.
@@ -30,15 +42,32 @@ public enum TextWrap {
     /// that text too. Each row's text is a contiguous run of its hard line's graphemes starting at `offset`.
     public static func rows(_ text: String, width: Int) -> [Row] {
         var rows: [Row] = []
-        walk(text, width: width) { row, line, offset in rows.append(Row(text: row, line: line, offset: offset)) }
+        walk(text, width: width, build: true) { row, _, line, offset in
+            rows.append(Row(text: row, line: line, offset: offset))
+        }
         return rows
     }
 
-    /// The one walk both entry points share, so they cannot disagree: calls `emit` with each row, its hard line, and the grapheme
-    /// offset of its first grapheme in that line.
-    private static func walk(_ text: String, width: Int, emit: (String, Int, Int) -> Void) {
+    /// The text of `range` (UTF-8 offsets this walk produced) in `bytes`, built once.
+    private static func slice(_ bytes: Span<UInt8>, _ range: Range<Int>) -> String {
+        String(unsafeUninitializedCapacity: range.count) { buffer in
+            // SAFETY: `range` lies within `bytes` (offsets the walk produced) and `buffer` holds `range.count`.
+            bytes.withUnsafeBufferPointer { source in
+                // An empty buffer has no base address, and then nothing to copy.
+                guard let destination = buffer.baseAddress, let base = source.baseAddress else { return }
+                unsafe destination.update(from: base + range.lowerBound, count: range.count)
+            }
+            return range.count
+        }
+    }
+
+    /// The one walk the entry points share, so they cannot disagree: calls `emit` with each row, its display width, its hard line, and the
+    /// grapheme offset of its first grapheme in that line. With `build` false the row's text is empty (nothing is allocated for it).
+    private static func walk(_ text: String, width: Int, build: Bool, emit: (String, Int, Int, Int) -> Void) {
         let width = Swift.max(1, width)
-        if text.utf8.contains(0x09) { return walk(text.replacing("\t", with: "    "), width: width, emit: emit) }
+        if text.utf8.contains(0x09) {
+            return walk(text.replacing("\t", with: "    "), width: width, build: build, emit: emit)
+        }
         let utf8 = text.utf8Span
         let bytes = utf8.span
         var characters = utf8.makeCharacterIterator()
@@ -53,17 +82,7 @@ public enum TextWrap {
         var character = 0
         var lineStartCharacter = 0
 
-        func line(_ range: Range<Int>) -> String {
-            String(unsafeUninitializedCapacity: range.count) { buffer in
-                // SAFETY: `range` lies within `bytes` (offsets this walk produced) and `buffer` holds `range.count`.
-                bytes.withUnsafeBufferPointer { source in
-                    // An empty buffer has no base address, and then nothing to copy.
-                    guard let destination = buffer.baseAddress, let base = source.baseAddress else { return }
-                    unsafe destination.update(from: base + range.lowerBound, count: range.count)
-                }
-                return range.count
-            }
-        }
+        func line(_ range: Range<Int>) -> String { build ? Self.slice(bytes, range) : "" }
 
         while offset < bytes.count {
             let byte = bytes[offset]
@@ -72,7 +91,7 @@ public enum TextWrap {
             let isSpace: Bool
             if byte < 0x80, byte != 0x0D, offset &+ 1 == bytes.count || bytes[offset &+ 1] < 0x80 {
                 if byte == 0x0A {
-                    emit(line(lineStart ..< offset), hardLine, lineStartCharacter)
+                    emit(line(lineStart ..< offset), lineWidth, hardLine, lineStartCharacter)
                     (lineStart, lineWidth, lastSpace) = (offset &+ 1, 0, nil)
                     (hardLine, character, lineStartCharacter) = (hardLine &+ 1, 0, 0)
                     offset &+= 1
@@ -86,7 +105,7 @@ public enum TextWrap {
                 guard let grapheme = characters.next() else { break }
                 next = characters.currentCodeUnitOffset
                 if grapheme == "\n" {
-                    emit(line(lineStart ..< offset), hardLine, lineStartCharacter)
+                    emit(line(lineStart ..< offset), lineWidth, hardLine, lineStartCharacter)
                     (lineStart, lineWidth, lastSpace) = (next, 0, nil)
                     (hardLine, character, lineStartCharacter) = (hardLine &+ 1, 0, 0)
                     offset = next
@@ -98,7 +117,7 @@ public enum TextWrap {
             if lineWidth &+ characterWidth > width {
                 if isSpace {
                     // The line is exactly full: break here, and the space is the break.
-                    emit(line(lineStart ..< offset), hardLine, lineStartCharacter)
+                    emit(line(lineStart ..< offset), lineWidth, hardLine, lineStartCharacter)
                     (lineStart, lineWidth, lastSpace) = (next, 0, nil)
                     lineStartCharacter = character &+ 1
                     character &+= 1
@@ -107,12 +126,12 @@ public enum TextWrap {
                 }
                 if let space = lastSpace, space.offset > lineStart {
                     // Break at the last space: the space itself is dropped, the rest carries over.
-                    emit(line(lineStart ..< space.offset), hardLine, lineStartCharacter)
+                    emit(line(lineStart ..< space.offset), space.width, hardLine, lineStartCharacter)
                     lineStart = space.offset &+ 1
                     lineStartCharacter = space.character &+ 1
                     lineWidth = lineWidth &- space.width &- 1
                 } else {
-                    emit(line(lineStart ..< offset), hardLine, lineStartCharacter)
+                    emit(line(lineStart ..< offset), lineWidth, hardLine, lineStartCharacter)
                     lineStart = offset
                     lineStartCharacter = character
                     lineWidth = 0
@@ -124,6 +143,6 @@ public enum TextWrap {
             offset = next
             character &+= 1
         }
-        emit(line(lineStart ..< bytes.count), hardLine, lineStartCharacter)
+        emit(line(lineStart ..< bytes.count), lineWidth, hardLine, lineStartCharacter)
     }
 }
