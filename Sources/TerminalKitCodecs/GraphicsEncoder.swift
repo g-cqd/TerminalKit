@@ -73,6 +73,7 @@ public enum GraphicsEncoder: Sendable {
             if placement.columns > 0 { parts.append("c=\(placement.columns)") }
             if placement.rows > 0 { parts.append("r=\(placement.rows)") }
             if placement.keepsCursor { parts.append("C=1") }
+            if placement.isVirtual { parts.append("U=1") }
         }
         switch cmd.deletion {
             case .allPlacements(let freeing):

@@ -172,6 +172,9 @@ public struct GraphicsCommand: Sendable, Equatable {
         /// Cells the image is scaled to fill (`c=`, `r=`); zero shows it at its pixel size.
         public var columns: UInt32
         public var rows: UInt32
+        /// A virtual placement (`U=1`): drawn wherever cells hold its Unicode placeholders (``KittyPlaceholder``), so it moves with
+        /// the text, instead of at the cursor.
+        public var isVirtual = false
 
         public init(
             id: UInt32,
@@ -210,6 +213,7 @@ public struct GraphicsCommand: Sendable, Equatable {
         placement: Placement? = nil,
         deletion: Deletion? = nil,
         isQuiet: Bool = false
+            // @dl:accept -- a memberwise initialiser with defaults reads like any other; its fields are the protocol's keys
     ) {
         self.action = action
         self.format = format
