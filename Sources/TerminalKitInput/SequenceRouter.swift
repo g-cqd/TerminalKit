@@ -103,7 +103,9 @@ public struct SequenceRouter: Sendable {
                 switch byte {
                     case 0x5b:
                         routeState = .csi
-                    case 0x5d:
+                    case 0x5d, 0x5f:
+                        // OSC and APC alike: a string to the terminator, delivered whole. APC is how kitty answers a graphics
+                        // query (`ESC _ G i=…;OK ESC \`); read as keys it was Alt+_ and the rest was typed into the input.
                         routeState = .osc
                     case 0x4f:
                         routeState = .ss3
