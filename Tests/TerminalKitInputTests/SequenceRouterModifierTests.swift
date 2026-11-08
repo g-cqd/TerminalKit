@@ -49,4 +49,15 @@ struct SequenceRouterModifierTests {
         let repeated = try key("\u{1B}[1;5:2A")
         #expect(repeated.modifiers == .ctrl && repeated.eventType == .repeat)
     }
+
+    /// Shift+Tab where the kitty keyboard protocol is off is back-tab, `ESC [ Z` (xterm, Terminal.app, iTerm2, tmux): it arrived as an
+    /// unknown sequence, so Shift+Tab did nothing in those terminals.
+    @Test(arguments: [
+        ("\u{1B}[Z", KeyModifiers.shift), ("\u{1B}[1;2Z", KeyModifiers.shift),
+        ("\u{1B}[1;6Z", KeyModifiers([.shift, .ctrl]))
+    ])
+    func `back-tab is Shift and Tab`(sequence: String, modifiers: KeyModifiers) throws {
+        let event = try key(sequence)
+        #expect(event.keyCode == Key.tab.rawValue && event.modifiers == modifiers, "\(event)")
+    }
 }

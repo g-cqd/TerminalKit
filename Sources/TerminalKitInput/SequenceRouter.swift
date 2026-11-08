@@ -29,7 +29,7 @@ public struct SequenceRouter: Sendable {
         case controlOverflow
     }
 
-    private enum FunctionalKeyCode {
+    enum FunctionalKeyCode {
         static let insert: UInt32 = 57348
         static let delete: UInt32 = 57349
         static let up: UInt32 = 57352
@@ -140,7 +140,9 @@ public struct SequenceRouter: Sendable {
                     case 0x30 ... 0x39:
                         routeState = .csiParam
                     default:
-                        if let keyCode = Self.csiKeyCode(for: byte) {
+                        if byte == Self.backTab {
+                            events.append(.key(KeyEvent(keyCode: Key.tab.rawValue, modifiers: .shift)))
+                        } else if let keyCode = Self.csiKeyCode(for: byte) {
                             events.append(.key(KeyEvent(keyCode: keyCode)))
                         } else {
                             events.append(.unknown(buffer))
@@ -216,7 +218,17 @@ public struct SequenceRouter: Sendable {
                             resetRouting()
                         }
                     default:
-                        if let keyCode = Self.csiKeyCode(for: byte) {
+                        if byte == Self.backTab {
+                            events.append(
+                                .key(
+                                    KeyEvent(
+                                        keyCode: Key.tab.rawValue,
+                                        modifiers: mods.union(.shift),
+                                        eventType: eventType
+                                    )
+                                )
+                            )
+                        } else if let keyCode = Self.csiKeyCode(for: byte) {
                             events.append(
                                 .key(KeyEvent(keyCode: keyCode, modifiers: mods, eventType: eventType))
                             )
@@ -463,63 +475,6 @@ public struct SequenceRouter: Sendable {
                 4
             default:
                 nil
-        }
-    }
-
-    private static func csiKeyCode(for terminator: UInt8) -> UInt32? {
-        switch terminator {
-            case 0x41:
-                return FunctionalKeyCode.up
-            case 0x42:
-                return FunctionalKeyCode.down
-            case 0x43:
-                return FunctionalKeyCode.right
-            case 0x44:
-                return FunctionalKeyCode.left
-            case 0x46:
-                return FunctionalKeyCode.end
-            case 0x48:
-                return FunctionalKeyCode.home
-            case 0x50:
-                return FunctionalKeyCode.f1
-            case 0x51:
-                return FunctionalKeyCode.f2
-            case 0x52:
-                return FunctionalKeyCode.f3
-            case 0x53:
-                return FunctionalKeyCode.f4
-            default:
-                return nil
-        }
-    }
-
-    private static func csiTildeKeyCode(for parameter: Int) -> UInt32? {
-        switch parameter {
-            case 2:
-                return FunctionalKeyCode.insert
-            case 3:
-                return FunctionalKeyCode.delete
-            case 5:
-                return FunctionalKeyCode.pageUp
-            case 6:
-                return FunctionalKeyCode.pageDown
-            default:
-                return nil
-        }
-    }
-
-    private static func ss3KeyCode(for terminator: UInt8) -> UInt32? {
-        switch terminator {
-            case 0x50:
-                return FunctionalKeyCode.f1
-            case 0x51:
-                return FunctionalKeyCode.f2
-            case 0x52:
-                return FunctionalKeyCode.f3
-            case 0x53:
-                return FunctionalKeyCode.f4
-            default:
-                return nil
         }
     }
 
