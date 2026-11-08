@@ -23,16 +23,21 @@ public struct MarkdownLinks: Sendable {
     /// Turns a target the schemes do not allow, such as a path, into a URI the host wants as a hyperlink, or nil for none; nil for no such
     /// mapping. Its result must still be printable ASCII.
     public var resolve: (@Sendable (String) -> String?)?
+    /// Finds the paths in a run of prose, outside code and links: each is drawn as its `shown` text over the bytes the author wrote, so a
+    /// selection still copies what was written, and links to its URI. Nil, the default, leaves prose as written.
+    public var paths: (@Sendable (String) -> [MarkdownPath])?
 
-    /// A policy of `targets`, `schemes` and `resolve`.
+    /// A policy of `targets`, `schemes`, `resolve` and `paths`.
     public init(
         targets: Targets = .whenMisleading,
         schemes: Set<String> = ["http", "https", "mailto"],
-        resolve: (@Sendable (String) -> String?)? = nil
+        resolve: (@Sendable (String) -> String?)? = nil,
+        paths: (@Sendable (String) -> [MarkdownPath])? = nil
     ) {
         self.targets = targets
         self.schemes = schemes
         self.resolve = resolve
+        self.paths = paths
     }
 
     /// The URI a cell of a link to `target` carries, or nil when it is not a hyperlink.

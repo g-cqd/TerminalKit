@@ -106,7 +106,39 @@ struct InlineCollector {
         let bytes = document.source[range]
         let text = bytes.contains(0x09) ? Self.string(bytes.map { $0 == 0x09 ? 0x20 : $0 }) : Self.string(bytes)
         // Bytes that are not UTF-8 decode to replacement characters of another length, so their offsets no longer match.
-        pieces.append(Piece(text: text, style: style, source: range, isVerbatim: text.utf8.count == range.count))
+        let isVerbatim = text.utf8.count == range.count
+        // The host's paths, in prose only: not in code, a link's text or an autolink, and not where offsets no longer match.
+        guard isVerbatim, codeDepth == 0, links.isEmpty, style.link == nil, let found = policy.paths?(text),
+            !found.isEmpty
+        else {
+            pieces.append(Piece(text: text, style: style, source: range, isVerbatim: isVerbatim))
+            return
+        }
+        let written = Array(text.utf8)
+        var next = 0
+        for path in found.sorted(by: { $0.bytes.lowerBound < $1.bytes.lowerBound })
+        where path.bytes.lowerBound >= next && path.bytes.upperBound <= written.count && !path.bytes.isEmpty {
+            if path.bytes.lowerBound > next { prose(written, next ..< path.bytes.lowerBound, of: range, style) }
+            var linked = style
+            linked.link = path.uri
+            let shownOver = range.lowerBound + path.bytes.lowerBound ..< range.lowerBound + path.bytes.upperBound
+            pieces.append(
+                Piece(
+                    text: path.shown,
+                    style: linked,
+                    source: shownOver,
+                    isVerbatim: path.shown.utf8.elementsEqual(written[path.bytes])
+                )
+            )
+            next = path.bytes.upperBound
+        }
+        if next < written.count { prose(written, next ..< written.count, of: range, style) }
+    }
+
+    /// The prose bytes `part` of a run whose source starts at `range`'s start, as they were written.
+    private mutating func prose(_ bytes: [UInt8], _ part: Range<Int>, of range: Range<Int>, _ style: Style) {
+        let source = range.lowerBound + part.lowerBound ..< range.lowerBound + part.upperBound
+        pieces.append(Piece(text: Self.string(bytes[part]), style: style, source: source, isVerbatim: true))
     }
 
     private mutating func chrome(_ text: String, _ style: Style) {
