@@ -3,7 +3,10 @@ internal import TerminalKitStyle
 
 /// The pieces of one leaf block's inlines, in the styles they nest in: emphasis, code, links and the rest over the block's own style.
 struct InlineCollector {
-    private(set) var pieces: [Piece] = []
+    private var collected: [Piece] = []
+    /// The pieces, with the host's paths found in each stretch of prose: the parser splits a text at `_` and `*` runs that are not
+    /// emphasis, so one path can arrive as several text nodes.
+    var pieces: [Piece] { policy.paths.map { PathPieces.split(collected, finding: $0) } ?? collected }
     private var styles: [Style]
     /// The links open around the current inline: their target, and the first piece of their text.
     private var links: [(target: String, source: Range<Int>?, firstPiece: Int)] = []
@@ -31,7 +34,7 @@ struct InlineCollector {
                 codeDepth += 1
                 styles.append(style.applying(theme.code))
             case .link, .image:
-                links.append((target: "", source: nil, firstPiece: pieces.count))
+                links.append((target: "", source: nil, firstPiece: collected.count))
                 styles.append(style.applying(theme.link))
                 if node.kind == .image { chrome("[", style) }
             case .autolink: styles.append(style.applying(theme.link))
@@ -46,10 +49,10 @@ struct InlineCollector {
             case .link, .image:
                 let link = links.removeLast()
                 if node.kind == .image { chrome("]", styles[styles.count - 1].applying(theme.link)) }
-                let text = pieces[link.firstPiece...].map(\.text).joined()
+                let text = collected[link.firstPiece...].map(\.text).joined()
                 if policy.showsTarget(link.target, text: text) {
                     chrome(" (", theme.linkTarget)
-                    pieces.append(Piece(text: link.target, style: theme.linkTarget, source: nil, isVerbatim: false))
+                    collected.append(Piece(text: link.target, style: theme.linkTarget, source: nil, isVerbatim: false))
                     chrome(")", theme.linkTarget)
                 }
             default: break
@@ -62,7 +65,7 @@ struct InlineCollector {
             case .text: verbatim(node.range, in: document, style: style)
             case .htmlInline: verbatim(node.range, in: document, style: style.applying(theme.html))
             case .entity:
-                pieces.append(
+                collected.append(
                     Piece(
                         text: Self.string(document.decode(node.range)),
                         style: style,
@@ -72,7 +75,7 @@ struct InlineCollector {
                 )
             case .softBreak where softBreaks == .space || codeDepth > 0: chrome(" ", style)
             case .softBreak, .hardBreak:
-                pieces.append(
+                collected.append(
                     codeDepth > 0 ? Piece(text: " ", style: style, source: nil, isVerbatim: false) : .lineBreak()
                 )
             case .taskMarker: chrome(node.payload == 1 ? "[x] " : "[ ] ", theme.marker)
@@ -107,42 +110,13 @@ struct InlineCollector {
         let text = bytes.contains(0x09) ? Self.string(bytes.map { $0 == 0x09 ? 0x20 : $0 }) : Self.string(bytes)
         // Bytes that are not UTF-8 decode to replacement characters of another length, so their offsets no longer match.
         let isVerbatim = text.utf8.count == range.count
-        // The host's paths, in prose only: not in code, a link's text or an autolink, and not where offsets no longer match.
-        guard isVerbatim, codeDepth == 0, links.isEmpty, style.link == nil, let found = policy.paths?(text),
-            !found.isEmpty
-        else {
-            pieces.append(Piece(text: text, style: style, source: range, isVerbatim: isVerbatim))
-            return
-        }
-        let written = Array(text.utf8)
-        var next = 0
-        for path in found.sorted(by: { $0.bytes.lowerBound < $1.bytes.lowerBound })
-        where path.bytes.lowerBound >= next && path.bytes.upperBound <= written.count && !path.bytes.isEmpty {
-            if path.bytes.lowerBound > next { prose(written, next ..< path.bytes.lowerBound, of: range, style) }
-            var linked = style
-            linked.link = path.uri
-            let shownOver = range.lowerBound + path.bytes.lowerBound ..< range.lowerBound + path.bytes.upperBound
-            pieces.append(
-                Piece(
-                    text: path.shown,
-                    style: linked,
-                    source: shownOver,
-                    isVerbatim: path.shown.utf8.elementsEqual(written[path.bytes])
-                )
-            )
-            next = path.bytes.upperBound
-        }
-        if next < written.count { prose(written, next ..< written.count, of: range, style) }
-    }
-
-    /// The prose bytes `part` of a run whose source starts at `range`'s start, as they were written.
-    private mutating func prose(_ bytes: [UInt8], _ part: Range<Int>, of range: Range<Int>, _ style: Style) {
-        let source = range.lowerBound + part.lowerBound ..< range.lowerBound + part.upperBound
-        pieces.append(Piece(text: Self.string(bytes[part]), style: style, source: source, isVerbatim: true))
+        var piece = Piece(text: text, style: style, source: range, isVerbatim: isVerbatim)
+        piece.isProse = isVerbatim && codeDepth == 0 && links.isEmpty && style.link == nil
+        collected.append(piece)
     }
 
     private mutating func chrome(_ text: String, _ style: Style) {
-        pieces.append(Piece(text: text, style: style, source: nil, isVerbatim: false))
+        collected.append(Piece(text: text, style: style, source: nil, isVerbatim: false))
     }
 
     static func string(_ bytes: some Collection<UInt8>) -> String { String(decoding: bytes, as: UTF8.self) }

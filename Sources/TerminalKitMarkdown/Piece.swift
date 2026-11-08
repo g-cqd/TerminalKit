@@ -9,6 +9,8 @@ struct Piece {
     var isVerbatim: Bool
     /// A line break: the next piece starts a row.
     var isBreak = false
+    /// Prose the host's paths may be found in (`MarkdownLinks/paths`): not code, a link's text or an autolink.
+    var isProse = false
 
     /// The run of `text`'s bytes `bytes`, showing the part of the source it covers.
     func run(_ bytes: Range<Int>) -> StyledRun {

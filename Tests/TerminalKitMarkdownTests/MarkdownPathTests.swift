@@ -29,6 +29,15 @@ struct MarkdownPathTests {
         #expect(Rendered.run(" now.", in: markdown, links: Self.links)?.source == 25 ..< 30)
     }
 
+    @Test func `a path with underscores, which the parser splits its text at, is found whole`() throws {
+        let links = MarkdownLinks(paths: { text in
+            guard text.hasPrefix("/a_b/c_d.swift") else { return [] }
+            return [MarkdownPath(bytes: 0 ..< 14, shown: "c_d.swift", uri: "file:///a_b/c_d.swift")]
+        })
+        #expect(Rendered.rows("/a_b/c_d.swift is here", links: links) == ["c_d.swift is here"])
+        #expect(Rendered.run("c_d.swift", in: "/a_b/c_d.swift is here", links: links)?.source == 0 ..< 14)
+    }
+
     @Test func `code and links keep what was written`() {
         #expect(Rendered.rows("`/repo/Sources/a.swift`", links: Self.links) == ["/repo/Sources/a.swift"])
         #expect(
