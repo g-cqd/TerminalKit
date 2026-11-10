@@ -25,7 +25,9 @@ public struct InputLayout: Sendable {
     public let firstRowIndent: Int
     private var carets: [Position] = []
 
-    public init(_ text: String, columns: Int, firstRowIndent: Int = 0, tabSize: Int = 4) {
+    /// `wrapsWords` breaks before a word following whitespace when it fits a whole row but not the remaining cells.
+    /// Whitespace is retained, not trimmed or inserted; the default keeps hard wrapping for existing consumers.
+    public init(_ text: String, columns: Int, firstRowIndent: Int = 0, tabSize: Int = 4, wrapsWords: Bool = false) {
         let columns = max(1, columns)
         self.columns = columns
         self.firstRowIndent = min(max(0, firstRowIndent), columns - 1)
@@ -35,6 +37,15 @@ public struct InputLayout: Sendable {
         // Before each step: `rows` holds everything rendered so far, `column` is its end, and every earlier source boundary has one
         // cell in `carets`. Rows and caret cells are monotonic in reading order. Runs of printable ASCII, most of any draft, are laid
         // out a row's worth at a time (ask roadmap 0151); everything else one grapheme at a time.
+        if wrapsWords {
+            placeWords(text, column: &column, tabSize: tabSize)
+            if column >= columns {
+                rows.append("")
+                column = 0
+            }
+            carets.append(Position(row: rows.count - 1, column: column))
+            return
+        }
         let utf8 = text.utf8
         var index = text.startIndex
         while index < text.endIndex {
@@ -53,6 +64,59 @@ public struct InputLayout: Sendable {
             column = 0
         }
         carets.append(Position(row: rows.count - 1, column: column))
+    }
+
+    /// Word-aware layout shares the same caret placement, keeping every space in the source. A word that fits a full row
+    /// moves whole after a separator; a longer word or the first word after a prefix keeps the hard-wrap fallback.
+    private mutating func placeWords(_ text: String, column: inout Int, tabSize: Int) {
+        var start = text.startIndex
+        var afterSeparator = false
+        let bytes = text.utf8
+        while start < text.endIndex {
+            // ASCII words ending at ASCII whitespace are whole graphemes. Scan their bytes, not each Character.
+            var asciiEnd = start
+            while asciiEnd < bytes.endIndex, (0x21 ... 0x7E).contains(bytes[asciiEnd]) {
+                asciiEnd = bytes.index(after: asciiEnd)
+            }
+            if asciiEnd > start,
+                asciiEnd == bytes.endIndex || [0x20, 0x09, 0x0A, 0x0D, 0x0B, 0x0C].contains(bytes[asciiEnd])
+            {
+                let word = bytes[start ..< asciiEnd]
+                let width = word.count
+                if afterSeparator, column > 0, width <= columns, width > columns - column {
+                    rows.append("")
+                    column = 0
+                }
+                place(ascii: word, column: &column)
+                start = asciiEnd
+                afterSeparator = false
+                continue
+            }
+            let character = text[start]
+            if character.isWhitespace {
+                place(character, column: &column, tabSize: tabSize)
+                afterSeparator = !character.isNewline
+                start = text.index(after: start)
+                continue
+            }
+            var end = text.index(after: start)
+            while end < text.endIndex, !text[end].isWhitespace { end = text.index(after: end) }
+            let word = text[start ..< end]
+            let ascii = word.utf8.allSatisfy { (0x21 ... 0x7E).contains($0) }
+            let width = ascii ? word.utf8.count : UnicodeWidth.displayWidth(of: String(word))
+            if afterSeparator, column > 0, width <= columns, width > columns - column {
+                rows.append("")
+                column = 0
+            }
+            // Printable ASCII words keep the row-at-a-time fast path; other words use the same grapheme placement as hard wrap.
+            if ascii {
+                place(ascii: word.utf8, column: &column)
+            } else {
+                for character in word { place(character, column: &column, tabSize: tabSize) }
+            }
+            afterSeparator = false
+            start = end
+        }
     }
 
     /// Where the run of printable ASCII that starts at `start` ends: each byte of it is a grapheme of its own, one cell wide. The last

@@ -56,3 +56,10 @@ Partly adopted, and this entry's "ask does not use any of it" is out of date: as
 `TextCursor` or `TextNavigation`; whether it should is a decision, not a debt, and is left to the day the kit's editor has a second
 consumer (Atelier). Still owed: the clipping indicator, wheel and click inside the input (ask does these itself with `scrollInput`), and
 a terminal pass.
+
+## Word-aware editable layout (ask n57, 2026-11-10)
+
+`InputLayout(..., wrapsWords: true)` moves a word following whitespace whole to the next row when it fits a full row but not
+what remains. It retains every source space and hard newline, falls back to character wrapping for long words, and shares
+its caret map with clicking, selection and vertical navigation. The default remains hard wrapping for existing callers.
+`WordInputLayoutTests` covers word boundaries, tabs, prefixes, wide/combined graphemes, control sanitisation and narrow widths.
