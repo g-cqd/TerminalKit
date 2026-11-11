@@ -63,3 +63,7 @@ a terminal pass.
 what remains. It retains every source space and hard newline, falls back to character wrapping for long words, and shares
 its caret map with clicking, selection and vertical navigation. The default remains hard wrapping for existing callers.
 `WordInputLayoutTests` covers word boundaries, tabs, prefixes, wide/combined graphemes, control sanitisation and narrow widths.
+
+A word asks for one cell more than its width, for the space after it, when the row can hold both (2026-11-11): no row starts with
+the space that separates two words, and a word does not move when the space after it is typed. A word as wide as the row, and the
+first word after a prefix, are the exceptions.

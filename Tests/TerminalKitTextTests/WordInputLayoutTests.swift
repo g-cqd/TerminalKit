@@ -49,4 +49,37 @@ struct WordInputLayoutTests {
             }
         }
     }
+
+    /// Found reviewing ask's input (2026-11-11): a word that ended in the last cell sent the space after it to the start of the next
+    /// row (`hello world` / ` foo`), and typing that space moved the cursor down a row.
+    @Test func `a word keeps a cell for the space after it, so no row starts with that space`() {
+        #expect(InputLayout("hello world foo", columns: 11, wrapsWords: true).rows == ["hello ", "world foo"])
+        // The same rows before and after the space is typed: the word does not jump when it is.
+        #expect(InputLayout("hello world", columns: 11, wrapsWords: true).rows == ["hello ", "world"])
+        #expect(InputLayout("hello world ", columns: 11, wrapsWords: true).rows == ["hello ", "world "])
+        // The first word after a prefix is not moved, since the prefix would be left alone on its row: its space starts the next row.
+        #expect(InputLayout("abc de", columns: 6, firstRowIndent: 3, wrapsWords: true).rows == ["abc", " de"])
+        // A word as wide as the row has no cell to keep: it fills the row, as before.
+        #expect(InputLayout("aaaa bbbb", columns: 4, wrapsWords: true).rows == ["aaaa", " ", "bbbb", ""])
+    }
+
+    @Test func `words shorter than the row, one space apart, never leave a row starting with a space`() {
+        var seed: UInt64 = 11
+        func random(_ n: Int) -> Int {
+            seed = seed &* 6_364_136_223_846_793_005 &+ 1
+            return Int(seed >> 33) % n
+        }
+        for _ in 0 ..< 300 {
+            let columns = 6 + random(30)
+            let words = (0 ..< 1 + random(30)).map { _ in String(repeating: "w", count: 1 + random(columns - 2)) }
+            let layout = InputLayout(
+                words.joined(separator: " "),
+                columns: columns,
+
+                wrapsWords: true
+            )
+            #expect(layout.rows.dropFirst().allSatisfy { !$0.hasPrefix(" ") }, "\(columns): \(layout.rows)")
+            #expect(layout.rows.joined() == words.joined(separator: " "))
+        }
+    }
 }

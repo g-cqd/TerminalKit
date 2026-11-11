@@ -25,7 +25,8 @@ public struct InputLayout: Sendable {
     public let firstRowIndent: Int
     private var carets: [Position] = []
 
-    /// `wrapsWords` breaks before a word following whitespace when it fits a whole row but not the remaining cells.
+    /// `wrapsWords` breaks before a word following whitespace when it fits a whole row but not the remaining cells, less one kept
+    /// for the space after it.
     /// Whitespace is retained, not trimmed or inserted; the default keeps hard wrapping for existing consumers.
     public init(_ text: String, columns: Int, firstRowIndent: Int = 0, tabSize: Int = 4, wrapsWords: Bool = false) {
         let columns = max(1, columns)
@@ -66,6 +67,11 @@ public struct InputLayout: Sendable {
         carets.append(Position(row: rows.count - 1, column: column))
     }
 
+    /// The cells a word `width` wide asks of a row: its own and one for the space after it, when the row can hold both. A word that
+    /// ended in the last cell sent its space to the start of the next row, and typing that space moved the cursor down; keeping the
+    /// cell whether or not the space is there yet means a word never moves when the space is typed.
+    private static func cells(for width: Int, of columns: Int) -> Int { Swift.min(width + 1, columns) }
+
     /// Word-aware layout shares the same caret placement, keeping every space in the source. A word that fits a full row
     /// moves whole after a separator; a longer word or the first word after a prefix keeps the hard-wrap fallback.
     private mutating func placeWords(_ text: String, column: inout Int, tabSize: Int) {
@@ -83,7 +89,8 @@ public struct InputLayout: Sendable {
             {
                 let word = bytes[start ..< asciiEnd]
                 let width = word.count
-                if afterSeparator, column > 0, width <= columns, width > columns - column {
+                if afterSeparator, column > 0, width <= columns, Self.cells(for: width, of: columns) > columns - column
+                {
                     rows.append("")
                     column = 0
                 }
@@ -104,7 +111,7 @@ public struct InputLayout: Sendable {
             let word = text[start ..< end]
             let ascii = word.utf8.allSatisfy { (0x21 ... 0x7E).contains($0) }
             let width = ascii ? word.utf8.count : UnicodeWidth.displayWidth(of: String(word))
-            if afterSeparator, column > 0, width <= columns, width > columns - column {
+            if afterSeparator, column > 0, width <= columns, Self.cells(for: width, of: columns) > columns - column {
                 rows.append("")
                 column = 0
             }
