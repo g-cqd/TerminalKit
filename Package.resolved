@@ -3,7 +3,7 @@
   "pins" : [
     {
       "identity" : "aemi",
-      "kind" : "localSourceControl",
+      "kind" : "remoteSourceControl",
       "location" : "https://github.com/Aemi-Studio/aemi.git",
       "state" : {
         "revision" : "0bae2edb1a89bd3d931fb3122c2184cc5c368834"
@@ -11,7 +11,7 @@
     },
     {
       "identity" : "aemihmmml",
-      "kind" : "localSourceControl",
+      "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiHMMML.git",
       "state" : {
         "revision" : "ed8469a6b6893265ad8ceede6f7fee00d3169e88"
@@ -19,7 +19,7 @@
     },
     {
       "identity" : "aemijson",
-      "kind" : "localSourceControl",
+      "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiJSON.git",
       "state" : {
         "revision" : "806b481d8cc7e21f07d45537b625c5ac9abfc87e"
@@ -27,7 +27,7 @@
     },
     {
       "identity" : "aemimarkdown",
-      "kind" : "localSourceControl",
+      "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiMarkdown.git",
       "state" : {
         "revision" : "4d2fa30e5be7f109526880f767bb788ae5f5d75a"
@@ -35,7 +35,7 @@
     },
     {
       "identity" : "aemiregex",
-      "kind" : "localSourceControl",
+      "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiRegex.git",
       "state" : {
         "revision" : "3efa8699dbce4cafe5efc6dcf76223890cf06c1e"
