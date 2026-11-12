@@ -1,5 +1,5 @@
 {
-  "originHash" : "8c2b14b16f4351424e6cf8803e2dbb5830238133bd07bdbc50c7d544ab372850",
+  "originHash" : "cd42850b950562205ea12f4e80d782068820c19fcf2fb14278b721ab94f20022",
   "pins" : [
     {
       "identity" : "aemi",
@@ -46,8 +46,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ordo-one/benchmark",
       "state" : {
-        "revision" : "def9afdba446b03efbbbcecb3b892e97e8294214",
-        "version" : "1.38.0"
+        "revision" : "ca4a9d300fc15d38132853c2e30462337b33c43f",
+        "version" : "1.38.1"
       }
     },
     {
