@@ -166,12 +166,14 @@ public struct InputLayout: Sendable {
             rows.append("")
             column = 0
             return
+            // @dl:accept -- the equivalence test keeps this grapheme walk, as it was before the ASCII fast path, as its reference: a copy on purpose
         }
         var shown = character
         if character != "\t", character.unicodeScalars.contains(where: TextSanitizer.isControl) { shown = "�" }
         let width = UnicodeWidth.displayWidth(of: shown)
         if width > columns { shown = "?" }
         let columns = columns
+        // @dl:accept -- the equivalence test keeps this grapheme walk, as it was before the ASCII fast path, as its reference: a copy on purpose
         func measured(at column: Int) -> Int {
             character == "\t" ? min(tabSize - column % tabSize, columns) : min(width, columns)
         }
@@ -179,6 +181,7 @@ public struct InputLayout: Sendable {
             rows.append("")
             column = 0
         }
+        // @dl:accept -- the equivalence test keeps this grapheme walk, as it was before the ASCII fast path, as its reference: a copy on purpose
         carets.append(Position(row: rows.count - 1, column: column))
         let used = measured(at: column)
         if character == "\t" {
