@@ -51,7 +51,7 @@ let package = Package(
         // Atelier has done it this way all along. The pin is current with Atelier's after ADR-0005.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "0bae2edb1a89bd3d931fb3122c2184cc5c368834"),
         // The parser `TerminalKitMarkdown` draws (roadmap 0022); it pins the same Aemi revision as above.
-        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "706564dda6f824917ae5f79250f9377dffc809ac")
+        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "e8640c9b75106c1996505170fa6306b173d853ff")
     ],
     targets: [
         .target(
