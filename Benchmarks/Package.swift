@@ -28,7 +28,7 @@ let package = Package(
         .package(name: "TerminalKit", path: ".."),
         // Exact, like every other pin in the ecosystem: a benchmark harness that moves under the numbers
         // changes the numbers.
-        .package(url: "https://github.com/ordo-one/benchmark", exact: "1.38.0"),
+        .package(url: "https://github.com/ordo-one/benchmark", exact: "1.38.2"),
         // For the probe that reads the thread's instructions and counts allocations: the revision TerminalKit itself pins.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "44267bd0b5b07cbb6f14320dae0449f49bb531cd"),
         // The parser the probe reads documents with: the revision TerminalKit itself pins.
