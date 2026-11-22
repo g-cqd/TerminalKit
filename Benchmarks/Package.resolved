@@ -1,5 +1,5 @@
 {
-  "originHash" : "f2034b9e0c96f68c16bbde4a134c10440ee25f763f2b51c2c4c6117187d037c4",
+  "originHash" : "37fc8058b89b14a297215f6b25981a6604f7873a8953061734bcff24e67b5598",
   "pins" : [
     {
       "identity" : "aemi",
@@ -34,14 +34,6 @@
       }
     },
     {
-      "identity" : "aemimermaid",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/g-cqd/AemiMermaid.git",
-      "state" : {
-        "revision" : "f21cd42a25a20e2df0a7dca7327b398d5cbfc774"
-      }
-    },
-    {
       "identity" : "aemiregex",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiRegex.git",
@@ -50,20 +42,12 @@
       }
     },
     {
-      "identity" : "aemitextui",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/g-cqd/AemiTextUI.git",
-      "state" : {
-        "revision" : "4b64bf4ea295d3ea68ceaa9ca2360beb7f5b0a3d"
-      }
-    },
-    {
       "identity" : "benchmark",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ordo-one/benchmark",
       "state" : {
-        "revision" : "def9afdba446b03efbbbcecb3b892e97e8294214",
-        "version" : "1.38.0"
+        "revision" : "656677c39c370bff2cbc4ebef7133dd57ba63f3b",
+        "version" : "1.39.0"
       }
     },
     {
