@@ -1,5 +1,5 @@
 {
-  "originHash" : "37fc8058b89b14a297215f6b25981a6604f7873a8953061734bcff24e67b5598",
+  "originHash" : "7243b0e7958256b5e8ec0a8ad57858cdd2c496a2ce8f2b38edbf4be90a7ab42b",
   "pins" : [
     {
       "identity" : "aemi",
@@ -34,11 +34,27 @@
       }
     },
     {
+      "identity" : "aemimermaid",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/g-cqd/AemiMermaid.git",
+      "state" : {
+        "revision" : "f21cd42a25a20e2df0a7dca7327b398d5cbfc774"
+      }
+    },
+    {
       "identity" : "aemiregex",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiRegex.git",
       "state" : {
         "revision" : "210f7aaf80152742c145837753368b9b4c0e246b"
+      }
+    },
+    {
+      "identity" : "aemitextui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/g-cqd/AemiTextUI.git",
+      "state" : {
+        "revision" : "4b64bf4ea295d3ea68ceaa9ca2360beb7f5b0a3d"
       }
     },
     {
@@ -64,8 +80,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ordo-one/malloc-interposer.git",
       "state" : {
-        "revision" : "f479398f73b14dbd1d25f4e01fd667171ddc9f18",
-        "version" : "1.6.0"
+        "revision" : "977dc0639b742ecd05ac03fecc53664095821a5d",
+        "version" : "1.6.1"
       }
     },
     {
@@ -100,8 +116,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
-        "version" : "1.7.4"
+        "revision" : "88754449ab766a739610b660e117762115fabc9c",
+        "version" : "1.7.6"
       }
     },
     {
@@ -109,8 +125,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "f8fad2f95ad67b45f6340c0960e2396094d67e07",
-        "version" : "5.1.1"
+        "revision" : "3280a5f72874d2f73bf25551bbb64f524c76d834",
+        "version" : "5.1.2"
       }
     },
     {
@@ -136,8 +152,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-system.git",
       "state" : {
-        "revision" : "869129b7bf4ecc57b97d0193ad29690ca2134750",
-        "version" : "1.8.1"
+        "revision" : "640e5755b5826f4437eaeedd366fd776737db62c",
+        "version" : "1.9.0"
       }
     },
     {
