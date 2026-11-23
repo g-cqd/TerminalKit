@@ -5,6 +5,7 @@
 #   Scripts/benchmarks.sh compare <rev> [--head-first]
 #                                          run <rev> then this tree on this machine (or this tree first), fail on
 #                                          a regression
+#   Scripts/benchmarks.sh gate <rev>       compare in both orders; fail on a benchmark that regressed in both (ADR-0034)
 #   Scripts/benchmarks.sh record           rewrite Benchmarks/REFERENCE.md from a run on this machine
 #
 # `compare` measures <rev>'s library with THIS tree's benchmarks, in a temporary worktree, so the two
@@ -73,9 +74,12 @@ case "${1:-}" in
                     && swift package --allow-writing-to-package-directory benchmark baseline update base --no-progress --quiet)
             fi
         }
+        # This tree is measured from a copy beside the base, built clean as the base is: built in place, incrementally, at
+        # another path, the same code came out 6 to 13 % slower on the input decoders in both orders (ADR-0034).
+        rsync -a --exclude .build --exclude .git --exclude .benchmarkBaselines --exclude .swiftpm "$root/" "$scratch/head/"
         measure_head() {
             printf '==> benchmarks of this tree\n'
-            (cd "$bench" \
+            (cd "$scratch/head/Benchmarks" \
                 && swift package --allow-writing-to-package-directory benchmark baseline update head --no-progress --quiet)
         }
         if [ "${3:-}" = --head-first ]; then
@@ -85,22 +89,31 @@ case "${1:-}" in
             measure_base
             measure_head
         fi
-        for target in "$scratch"/base/Benchmarks/.benchmarkBaselines/*/; do
-            name=$(basename "$target")
-            mkdir -p "$bench/.benchmarkBaselines/$name"
-            rm -rf "$bench/.benchmarkBaselines/$name/base"
-            cp -R "$target/base" "$bench/.benchmarkBaselines/$name/base"
+        for side in base head; do
+            for target in "$scratch"/$side/Benchmarks/.benchmarkBaselines/*/; do
+                [ -d "$target/$side" ] || continue
+                name=$(basename "$target")
+                mkdir -p "$bench/.benchmarkBaselines/$name"
+                rm -rf "$bench/.benchmarkBaselines/$name/$side"
+                cp -R "$target/$side" "$bench/.benchmarkBaselines/$name/$side"
+            done
         done
 
         printf '==> regression check, base against head\n'
         # The plugin exits 1 for a regression and for an improvement alike; only its message tells them apart.
         # Its tables can be cut mid-character, so grep reads the output as bytes (-a, LC_ALL=C): on CI a
         # mangled box character made grep miss "benchmarkThresholdImprovement" and fail an improvement.
+        # stdout apart from stderr: on CI the plugin's "error: benchmarkThresholdRegression" landed inside a benchmark's name.
         set +e
-        output=$(cd "$bench" && swift package benchmark baseline check base head --no-progress 2>&1)
+        output=$(cd "$bench" && swift package benchmark baseline check base head --no-progress 2>"$scratch/check.err")
         status=$?
         set -e
+        output=$(printf '%s\n' "$output"; cat "$scratch/check.err")
         printf '%s\n' "$output"
+        # With a regression the plugin lists only the regressions, one "Threshold deviations for <target>:<name>" each.
+        if [ -n "${BENCH_REGRESSED:-}" ]; then
+            printf '%s\n' "$output" | LC_ALL=C sed -n 's/^Threshold deviations for //p' | LC_ALL=C sort -u > "$BENCH_REGRESSED"
+        fi
         if [ "$status" -eq 0 ]; then
             printf '\n[OK] no change beyond the thresholds\n'
         elif printf "%s" "$output" | LC_ALL=C grep -aq benchmarkThresholdRegression; then
@@ -113,8 +126,29 @@ case "${1:-}" in
             exit 1
         fi
         ;;
+    gate)
+        # A regression is a benchmark slower in both orders (ADR-0034). Drift during a run favours whichever side met less
+        # load, so a comparison of identical code against itself fails on some benchmark in each order, but not the same one:
+        # on 2026-11-22 two such attempts on CI failed on 5 and 17 benchmarks, none in common.
+        [ $# -eq 2 ] || { echo "usage: $0 gate <rev>" >&2; exit 2; }
+        lists=$(mktemp -d)
+        trap 'rm -rf "$lists"' EXIT
+        BENCH_REGRESSED="$lists/base-first" "$0" compare "$2" && exit 0
+        [ -s "$lists/base-first" ] || { echo "[FAIL] the comparison did not run" >&2; exit 1; }
+        printf '::warning::base first, %s regressed; a regression must also show head first\n' "$(wc -l < "$lists/base-first" | tr -d ' ')"
+        BENCH_REGRESSED="$lists/head-first" "$0" compare "$2" --head-first && exit 0
+        [ -s "$lists/head-first" ] || { echo "[FAIL] the comparison did not run" >&2; exit 1; }
+        both=$(LC_ALL=C comm -12 "$lists/base-first" "$lists/head-first")
+        if [ -z "$both" ]; then
+            printf '\n[OK] no benchmark regressed in both orders (%s base first, %s head first, none in common): drift\n' \
+                "$(wc -l < "$lists/base-first" | tr -d ' ')" "$(wc -l < "$lists/head-first" | tr -d ' ')"
+            exit 0
+        fi
+        printf '\n[FAIL] regressed in both orders:\n%s\n' "$both" >&2
+        exit 1
+        ;;
     *)
-        echo "usage: $0 [compare <rev> | record]" >&2
+        echo "usage: $0 [compare <rev> | gate <rev> | record]" >&2
         exit 2
         ;;
 esac
