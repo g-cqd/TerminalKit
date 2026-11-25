@@ -28,7 +28,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "340c49040faa49313d5632003d8224d9d0084fb0"),
-        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "7e222678876503101697c30dbbcfa8569c4117d7")
+        .package(url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "269d403d416e3fb5aff9bab9087907d8eb322866")
     ],
     targets: [
         .target(
