@@ -1,12 +1,12 @@
 {
-  "originHash" : "51f96750270e4a7ad7b9d4c41a29b956cb949320629f414682590394de0bfaba",
+  "originHash" : "9450424a281bcd117854ac478979d5f2b7b107adf2ac40f7d27883ce629813d9",
   "pins" : [
     {
       "identity" : "aemi",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Aemi-Studio/aemi.git",
       "state" : {
-        "revision" : "1567137e2c810eb489facf29d90a2c623b75d604"
+        "revision" : "9f8d1a3eafed0ad23919b9c68d33606632ce0659"
       }
     },
     {
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiHMMML.git",
       "state" : {
-        "revision" : "dd439204570a9969612ea009608ec39e455c6a33"
+        "revision" : "2daa7f8c91cd9aada423ae6c62cde19fcf9d6795"
       }
     },
     {
@@ -22,7 +22,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiJSON.git",
       "state" : {
-        "revision" : "75deac170071149540c436bdab47a5c6d5520a4a"
+        "revision" : "fb4478051725c95614e76b15ac11e9a5c6a502a3"
       }
     },
     {
@@ -30,7 +30,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiMarkdown.git",
       "state" : {
-        "revision" : "2240dc9329db6a6770cc60ecf5b14084282c17df"
+        "revision" : "7310d84c3e05708940d5954888b26eb24b9e6a82"
       }
     },
     {
@@ -38,7 +38,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiRegex.git",
       "state" : {
-        "revision" : "792eebdcdf3a47daf8ba6ae9a1dfd4c6c5833fc4"
+        "revision" : "1b58215ac7266f8c847065f0cb63ab1cc75b3bc9"
       }
     },
     {
@@ -111,6 +111,15 @@
       "state" : {
         "revision" : "b0b1963823fe828065ef49c09c8c9489f43cf7be",
         "version" : "5.2.0"
+      }
+    },
+    {
+      "identity" : "swift-log",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-log.git",
+      "state" : {
+        "revision" : "c7413d967b97aae67c46452bf7645bdb7b200e8e",
+        "version" : "1.17.2"
       }
     },
     {
