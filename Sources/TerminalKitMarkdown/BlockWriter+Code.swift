@@ -4,8 +4,13 @@ internal import TerminalKitText
 
 extension BlockWriter {
     /// A code block: its language on a row of its own, then its lines after the gutter, cut at the width rather than at spaces, since code
-    /// does not reflow. An HTML block is its lines, as written, with no gutter.
+    /// does not reflow. An HTML block is its lines, as written, with no gutter — except lines that are solely `<br>` tags
+    /// (CommonMark condition 7), which render as blank line breaks.
     mutating func emitCode(_ code: CodeBlock) {
+        if code.isHTML, Self.isAllLineBreakLines(code.lines, in: document.source) {
+            for _ in 0 ..< Swift.max(1, code.lines.count) { emit([]) }
+            return
+        }
         let base = code.isHTML ? theme.text.applying(theme.html) : theme.text.applying(theme.codeBlock)
         let open = code.isHTML ? nil : theme.codeOpen
         // Inside a rule (`codeOpen`), the language is on the opening corner, outside the gutter; otherwise it is the gutter's first row.
@@ -33,6 +38,21 @@ extension BlockWriter {
                 [Piece(text: close, style: theme.codeRule, source: nil, isVerbatim: false)],
                 breaksAnywhere: true
             )
+        }
+    }
+
+    /// True when every line of an HTML block is a bare `<br>` tag (optionally surrounded by horizontal spaces).
+    private static func isAllLineBreakLines(
+        _ lines: [(range: Range<Int>, spaces: Int)],
+        in source: ContiguousArray<UInt8>
+    ) -> Bool {
+        guard !lines.isEmpty else { return false }
+        return lines.allSatisfy { line in
+            var low = line.range.lowerBound
+            var high = line.range.upperBound
+            while low < high, source[low] == 0x20 || source[low] == 0x09 { low += 1 }
+            while high > low, source[high - 1] == 0x20 || source[high - 1] == 0x09 { high -= 1 }
+            return InlineCollector.isLineBreakTag(source[low ..< high])
         }
     }
 

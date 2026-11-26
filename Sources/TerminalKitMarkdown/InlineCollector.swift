@@ -11,6 +11,9 @@ struct InlineCollector {
     /// The links open around the current inline: their target, and the first piece of their text.
     private var links: [(target: String, source: Range<Int>?, firstPiece: Int)] = []
     private var codeDepth = 0
+    /// Drops a soft break or leading horizontal spaces immediately after an HTML `<br>` tag (matching HTML collapsing
+    /// so `<br> next` and `<br>\nnext` don't emit a spurious leading space or double line break).
+    private var trimAfterBreak = false
     private let themeBox: ThemeBox
     private var theme: MarkdownTheme { _read { yield themeBox.theme } }
     private let policy: MarkdownLinks
@@ -31,6 +34,7 @@ struct InlineCollector {
             case .strong: styles.append(style.applying(theme.strong))
             case .strikethrough: styles.append(style.applying(theme.strikethrough))
             case .codeSpan, .math:
+                trimAfterBreak = false
                 codeDepth += 1
                 styles.append(style.applying(theme.code))
             case .link, .image:
@@ -61,10 +65,32 @@ struct InlineCollector {
 
     mutating func leaf(_ node: MarkdownNode, parent: MarkdownNode?, in document: MarkdownDocument) {
         switch node.kind {
-            case .text where parent?.kind == .autolink: autolink(node, kind: parent?.payload ?? 0, in: document)
-            case .text: verbatim(node.range, in: document, style: style)
-            case .htmlInline: verbatim(node.range, in: document, style: style.applying(theme.html))
+            case .text where parent?.kind == .autolink:
+                trimAfterBreak = false
+                autolink(node, kind: parent?.payload ?? 0, in: document)
+            case .text:
+                var range = node.range
+                if trimAfterBreak, codeDepth == 0 {
+                    while range.lowerBound < range.upperBound {
+                        let byte = document.source[range.lowerBound]
+                        guard byte == 0x20 || byte == 0x09 else { break }
+                        range = (range.lowerBound + 1) ..< range.upperBound
+                    }
+                    if !range.isEmpty { trimAfterBreak = false }
+                } else {
+                    trimAfterBreak = false
+                }
+                if !range.isEmpty { verbatim(range, in: document, style: style) }
+            case .htmlInline:
+                if codeDepth == 0, Self.isLineBreakTag(document.source[node.range]) {
+                    collected.append(.lineBreak())
+                    trimAfterBreak = true
+                } else {
+                    trimAfterBreak = false
+                    verbatim(node.range, in: document, style: style.applying(theme.html))
+                }
             case .entity:
+                trimAfterBreak = false
                 collected.append(
                     Piece(
                         text: Self.string(document.decode(node.range)),
@@ -73,13 +99,22 @@ struct InlineCollector {
                         isVerbatim: false
                     )
                 )
-            case .softBreak where softBreaks == .space || codeDepth > 0: chrome(" ", style)
+            case .softBreak where trimAfterBreak && codeDepth == 0:
+                // `<br>\nnext` already broke the line; do not emit an extra blank line or leading space.
+                break
+            case .softBreak where softBreaks == .space || codeDepth > 0:
+                trimAfterBreak = false
+                chrome(" ", style)
             case .softBreak, .hardBreak:
+                trimAfterBreak = false
                 collected.append(
                     codeDepth > 0 ? Piece(text: " ", style: style, source: nil, isVerbatim: false) : .lineBreak()
                 )
-            case .taskMarker: chrome(node.payload == 1 ? "[x] " : "[ ] ", theme.marker)
+            case .taskMarker:
+                trimAfterBreak = false
+                chrome(node.payload == 1 ? "[x] " : "[ ] ", theme.marker)
             case .footnoteReference:
+                trimAfterBreak = false
                 chrome("[^", theme.marker)
                 verbatim(node.range, in: document, style: theme.marker)
                 chrome("]", theme.marker)
@@ -91,6 +126,22 @@ struct InlineCollector {
                 if let uri = policy.uri(for: target) { styles[styles.count - 1].link = uri }
             default: break
         }
+    }
+
+    /// True for an inline HTML line-break tag (`<br>`, `<br/>`, `<br />`, any ASCII case, no attributes).
+    static func isLineBreakTag(_ bytes: some Collection<UInt8>) -> Bool {
+        var i = bytes.startIndex
+        let end = bytes.endIndex
+        guard bytes.count >= 4, bytes[i] == 0x3C else { return false }
+        i = bytes.index(after: i)
+        let b = bytes[i] | 0x20
+        i = bytes.index(after: i)
+        let r = bytes[i] | 0x20
+        guard b == 0x62, r == 0x72 else { return false }
+        i = bytes.index(after: i)
+        while i < end, bytes[i] == 0x20 || bytes[i] == 0x09 { i = bytes.index(after: i) }
+        if i < end, bytes[i] == 0x2F { i = bytes.index(after: i) }
+        return i < end && bytes[i] == 0x3E && bytes.index(after: i) == end
     }
 
     /// The text of an autolink, which is its target too, once `mailto:` or `http://` is put before a bare address.

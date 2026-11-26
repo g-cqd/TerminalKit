@@ -76,4 +76,29 @@ struct MarkdownInlineTests {
         #expect(rows == ["a[31mb <b>c</b> d"])
         #expect(Rendered.run("<b>", in: "x <b>y", theme: .standard)?.style == Style(dim: true))
     }
+
+    @Test(arguments: ["<br>", "<br/>", "<br />", "<BR>", "<Br  />"])
+    func `inline br tags become line breaks in prose and table cells while code spans and attributes stay literal`(
+        tag: String
+    ) {
+        #expect(Rendered.rows("one\(tag)two") == ["one", "two"])
+        #expect(Rendered.rows("one\(tag) two") == ["one", "two"])
+        #expect(Rendered.rows("one\(tag)\ntwo") == ["one", "two"])
+        #expect(Rendered.lines("one\(tag)\ntwo", softBreaks: .lineBreak).map(\.text) == ["one", "two"])
+        #expect(Rendered.rows("`\(tag)`") == [tag])
+        #expect(Rendered.rows("x<br class=\"a\">y") == ["x<br class=\"a\">y"])
+
+        let table = "| A | B |\n| --- | --- |\n| line 1\(tag)line 2 | ok |\n"
+        let rows = Rendered.rows(table, width: 40)
+        #expect(
+            rows == [
+                "A      │ B ",
+                "───────┼───",
+                "line 1 │ ok",
+                "line 2 │   "
+            ]
+        )
+        // Standalone `<br>` on its own line (CommonMark HTML block condition 7) becomes an empty line, not literal `<br>`.
+        #expect(Rendered.rows("first\n\n\(tag)\n\nsecond") == ["first", "", "", "", "second"])
+    }
 }
